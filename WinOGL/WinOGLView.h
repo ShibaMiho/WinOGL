@@ -43,8 +43,6 @@ public:
 
 private:
 	HGLRC m_hRC;
-	GLfloat clicX;
-	GLfloat clicY;
 public:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnDestroy();

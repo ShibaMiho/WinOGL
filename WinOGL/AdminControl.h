@@ -2,6 +2,7 @@
 #pragma once
 #include<gl/GL.h>
 #include "Vertex.h"
+#include "Shape.h"
 
 class CAdminControl
 {
@@ -11,12 +12,10 @@ public:
 	
 	void Draw();
 
+	void CreateShape(double x,double y);
+
 private:
-	CVertex* vertex_head = NULL;
+	CShape* shape_head;
 
-public:
-	void AppendVertex(double x,double y);
-
-	void FreeVertex();
 };
 

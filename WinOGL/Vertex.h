@@ -32,6 +32,7 @@ public:
 	//　次の頂点リストを指すポインタを読み込む
 	CVertex* GetNext();
 
+
 };
 
 

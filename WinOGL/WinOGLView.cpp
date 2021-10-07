@@ -123,7 +123,7 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 		Y = Y * hi;
 	}
 
-	AC.AppendVertex(X, Y);
+	AC.CreateShape(X, Y);
 
 	RedrawWindow();
 
