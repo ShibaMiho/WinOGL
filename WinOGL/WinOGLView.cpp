@@ -62,15 +62,9 @@ void CWinOGLView::OnDraw(CDC* pDC)
 	wglMakeCurrent(pDC->m_hDC, m_hRC);
 
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-	
 	glClear(GL_COLOR_BUFFER_BIT /*  | GL_DEPTH_BUFFER_BIT */);
 	
-	glColor3f(1.0, 1.0, 1.0);
-	glPointSize(5);
-	glBegin(GL_POINTS);
-	glVertex2f(clicX,clicY);
-	glEnd();
-
+	AC.Draw();
 
 	glFlush();
 	SwapBuffers(pDC->m_hDC);
@@ -129,8 +123,7 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 		Y = Y * hi;
 	}
 
-	clicX = X;
-	clicY = Y;
+	AC.AppendVertex(X, Y);
 
 	RedrawWindow();
 
