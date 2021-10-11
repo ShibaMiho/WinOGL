@@ -14,8 +14,12 @@ public:
 
 	void CreateShape(double x,double y);
 
+	//}Œ`‚ğ’Ç‰Á‚·‚é
+	void AppendShape();
+
+	void FreeShape();
+
 private:
 	CShape* shape_head;
-
 };
 

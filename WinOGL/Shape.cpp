@@ -27,8 +27,7 @@ CVertex* CShape::GetVertexHead()
 	return vertex_head;
 }
 
-
-
+//’¸“_‚ð’Ç‰Á‚·‚é
 void CShape::AppendVertex(double x, double y)
 {
 	CVertex* vertex = new CVertex();

@@ -17,7 +17,9 @@ public:
 
 	CVertex* GetVertexHead();
 
+	//’¸“_‚ð’Ç‰Á‚·‚é
 	void AppendVertex(double x, double y);
+
 	void FreeVertex();
 
 };
