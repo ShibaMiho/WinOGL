@@ -38,6 +38,16 @@ void CShape::AppendVertex(double x, double y)
 	vertex_head = vertex;
 }
 
+//¡‚Ì’¸“_”‚ð•Ô‚·
+int CShape::CountVertex()
+{
+	int count = 0;
+	for (CVertex* p = GetVertexHead(); p != NULL; p = p->GetNext()) {
+		count++;
+	}
+	return count;
+}
+
 void CShape::FreeVertex()
 {
 	while (vertex_head != NULL) {

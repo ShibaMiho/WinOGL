@@ -20,6 +20,9 @@ public:
 	//’¸“_‚ğ’Ç‰Á‚·‚é
 	void AppendVertex(double x, double y);
 
+	//¡‚Ì’¸“_”‚ğ•Ô‚·
+	int CountVertex();
+
 	void FreeVertex();
 
 };
