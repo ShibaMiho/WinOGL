@@ -19,14 +19,19 @@ public:
 
 	//交差判定をする
 	bool CalcKousa(double x1,double y1,double x2,double y2);
-
+	//他交差判定をする
 	bool CalcTakousa(double x1,double y1);
+	//内包判定をする
+	bool CalcNaihou(double x,double y);
+	//内外判定をする
+	//bool CalcNaigai(double x,double y);
 
-	double CalcVectorX(double x1,double x2);
-	double CalcVectorY(double y1, double y2);
-
+	//ベクトルの計算をする
+	double CalcVector(double x1,double x2);
+	//内積の計算をする
+	double CalcNaiseki(double a1, double a2, double b1, double b2);
 	//外積の計算をする
-	double CalcGaiseki(double a1,double b1,double a2,double b2);
+	double CalcGaiseki(double a1, double a2, double b1, double b2);
 
 	void FreeShape();
 
