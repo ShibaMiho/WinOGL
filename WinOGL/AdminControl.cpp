@@ -244,9 +244,6 @@ bool CAdminControl::CalcNaigai(double x, double y)
 
 			double nai = CalcNaiseki(a_x, a_y, b_x, b_y);
 			double gai = CalcGaiseki(a_x, a_y, b_x, b_y);
-			if (gai < 0) {
-				gai = -1 * gai;
-			}
 
 			kakudo = atan2(gai, nai);
 			sum = kakudo + sum;
@@ -294,9 +291,6 @@ bool CAdminControl::CalcNaihou(double x, double y)
 
 			double nai = CalcNaiseki(a_x, a_y, b_x, b_y);
 			double gai = CalcGaiseki(a_x, a_y, b_x, b_y);
-			if (gai < 0) {
-				gai = -1 * gai;
-			}
 
 			kakudo = atan2(gai, nai);
 			sum = kakudo + sum;
@@ -323,10 +317,11 @@ bool CAdminControl::CalcNaihou(double x, double y)
 	
 }
 
+//1‚Â‘O‚Ì“_‚Æˆê‚©”äŠr‚·‚é
 bool CAdminControl::CalcBeforeSame(double x, double y)
 {
-	double x1;
-	double y1;
+	double x1 = 0.0;
+	double y1 = 0.0;
 	if (shape_head->GetVertexHead() != NULL) {
 		x1 = x - shape_head->GetVertexHead()->GetX();
 		y1 = y - shape_head->GetVertexHead()->GetY();

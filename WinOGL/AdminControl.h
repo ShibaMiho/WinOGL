@@ -26,6 +26,7 @@ public:
 	//内外判定をする
 	bool CalcNaihou(double x,double y);
 
+	//1つ前の点と一緒か比較する
 	bool CalcBeforeSame(double x,double y);
 
 	//ベクトルの計算をする
