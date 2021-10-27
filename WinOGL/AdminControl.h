@@ -22,9 +22,11 @@ public:
 	//他交差判定をする
 	bool CalcTakousa(double x1,double y1);
 	//内包判定をする
-	bool CalcNaihou(double x,double y);
+	bool CalcNaigai(double x,double y);
 	//内外判定をする
-	//bool CalcNaigai(double x,double y);
+	bool CalcNaihou(double x,double y);
+
+	bool CalcBeforeSame(double x,double y);
 
 	//ベクトルの計算をする
 	double CalcVector(double x1,double x2);
