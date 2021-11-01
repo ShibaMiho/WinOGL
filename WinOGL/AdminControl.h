@@ -12,7 +12,10 @@ public:
 	
 	void Draw();
 
+	//図形を作る
 	void CreateShape(double x,double y);
+	//頂点
+	void SelectEdit(double x,double y);
 
 	//図形を追加する
 	void AppendShape();
@@ -21,9 +24,11 @@ public:
 	bool CalcKousa(double x1,double y1,double x2,double y2);
 	//他交差判定をする
 	bool CalcTakousa(double x1,double y1);
-	//内包判定をする
-	bool CalcNaigai(double x,double y);
 	//内外判定をする
+	bool CalcNaigai(double x,double y);
+
+	CShape* CalcNaigai2(double x,double y);
+	//内包判定をする
 	bool CalcNaihou(double x,double y);
 
 	//1つ前の点と一緒か比較する
@@ -38,7 +43,24 @@ public:
 
 	void FreeShape();
 
+	//xyz軸を表示する
+	void DrawAxis();
+	//AxisFlagの切り替え
+	void ChangeAxisFlag();
+
+	//modeの判定
+	void LButtonSwitch(double x,double y);
+
+	void ChangeModeCreate();
+	//Edit_modeへの切り替え
+	void ChangeModeEdit();
+
 private:
 	CShape* shape_head;
+	bool AxisFlag;
+	CVertex* select_vertex;
+	CShape* select_shape;
+	int mode;
+	int sab_mode;
 };
 

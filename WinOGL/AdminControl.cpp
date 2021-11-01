@@ -1,13 +1,25 @@
 
 #include "pch.h"
 #include "AdminControl.h"
+
 #define _USE_MATH_DEFINES
+#define ID_CREATE_MODE 1
+#define ID_EDIT_MODE 2
+
+#define POINT_SELECT 1
+#define SHAPE_SELECT 2
+
 #include<math.h>
 
 
 CAdminControl::CAdminControl()
 {
 	shape_head = new CShape();
+	AxisFlag = false;
+	select_vertex = NULL;
+	select_shape = NULL;
+	mode = ID_CREATE_MODE;
+	sab_mode = NULL;
 }
 
 CAdminControl::~CAdminControl()
@@ -33,6 +45,36 @@ void CAdminControl::Draw()
 			glVertex2f(p->GetX(), p->GetY());
 		}
 		glEnd();
+	}
+
+	if (mode == ID_EDIT_MODE) {
+
+		if (sab_mode == POINT_SELECT) {
+			glColor3f(0.0, 1.0, 0.0);
+			glPointSize(8);
+
+			glBegin(GL_POINTS);		//頂点描画
+			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
+			glEnd();
+		}
+
+		if (sab_mode == SHAPE_SELECT) {
+			glColor3f(0.0, 1.0, 0.0);
+			glPointSize(8);
+
+			glBegin(GL_POINTS);
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				glVertex2f(p->GetX(), p->GetY());
+			}
+			glEnd();
+
+
+		}
+	}
+	
+	//AxisFlagがtrueのとき座標軸を描画する
+	if (AxisFlag) {
+		DrawAxis();
 	}
 	
 }
@@ -68,6 +110,7 @@ void CAdminControl::CreateShape(double x, double y)
 			if (CalcKousa(x, y, vertex->GetX(), vertex->GetY()) == false) {
 				if (CalcTakousa(x, y) == false) {
 					if (CalcNaihou(x, y) == false) {
+						//交差、他交差、内包していない場合
 
 						CVertex* p = shape_head->GetVertexHead();
 
@@ -113,6 +156,48 @@ void CAdminControl::CreateShape(double x, double y)
 				shape_head->AppendVertex(x, y);
 			}
 		}
+	}
+}
+
+void CAdminControl::SelectEdit(double x, double y)
+{
+	sab_mode = NULL;
+	double x1 = 0.0;
+	double y1 = 0.0;
+	double sa_x = 0.0;
+	double sa_y = 0.0;
+	for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
+		CVertex* v = s->GetVertexHead();
+		//頂点の選択
+		while (v != NULL) {
+			x1 = v->GetX();
+			y1 = v->GetY();
+
+			sa_x = x - x1;
+			sa_y = y - y1;
+			if (sa_x < 0) {
+				sa_x = -1 * sa_x;
+			}
+			if (sa_y < 0) {
+				sa_y = -1 * sa_y;
+			}
+			if (sa_x < 0.05 && sa_y < 0.05) {
+				select_shape = s;
+				select_vertex = v;
+				sab_mode = POINT_SELECT;
+				break;
+			}
+			v = v->GetNext();
+		}
+
+		if (sab_mode == NULL) {
+			CShape* shape = CalcNaigai2(x, y);
+			if (s == shape) {
+				sab_mode = SHAPE_SELECT;
+				select_shape = s;
+			}
+		}
+		
 	}
 }
 
@@ -258,11 +343,56 @@ bool CAdminControl::CalcNaigai(double x, double y)
 			hantei = -1 * hantei;
 		}
 		if (hantei <= 0.001) {
+			//内外する時
 			return true;
 		}
 	}
 
 	return false;
+}
+
+CShape* CAdminControl::CalcNaigai2(double x, double y)
+{
+	for (CShape* s = shape_head->GetNext(); s != NULL; s = s->GetNext()) {
+		double sum = 0.0;
+		double kakudo = 0.0;
+		CVertex* p = s->GetVertexHead();
+		while (p->GetNext() != NULL) {
+			double x1 = p->GetX();
+			double y1 = p->GetY();
+
+			p = p->GetNext();
+			double x2 = p->GetX();
+			double y2 = p->GetY();
+
+			double a_x = CalcVector(x1, x);
+			double a_y = CalcVector(y1, y);
+
+			double b_x = CalcVector(x2, x);
+			double b_y = CalcVector(y2, y);
+
+			double nai = CalcNaiseki(a_x, a_y, b_x, b_y);
+			double gai = CalcGaiseki(a_x, a_y, b_x, b_y);
+
+			kakudo = atan2(gai, nai);
+			sum = kakudo + sum;
+		}
+
+		if (sum < 0) {
+			sum = -1 * sum;
+		}
+
+		double hantei = sum - 2 * M_PI;
+		if (hantei < 0) {
+			hantei = -1 * hantei;
+		}
+		if (hantei <= 0.001) {
+			//内外する時
+			return s;
+		}
+	}
+
+	return NULL;
 }
 
 //内包判定をする
@@ -309,6 +439,7 @@ bool CAdminControl::CalcNaihou(double x, double y)
 			hantei = -1 * hantei;
 		}
 		if (hantei <= 0.001) {
+			//内包する時
 			return true;
 		}
 	}
@@ -320,19 +451,19 @@ bool CAdminControl::CalcNaihou(double x, double y)
 //1つ前の点と一緒か比較する
 bool CAdminControl::CalcBeforeSame(double x, double y)
 {
-	double x1 = 0.0;
-	double y1 = 0.0;
+	double pre_x = 0.0;
+	double pre_y = 0.0;
 	if (shape_head->GetVertexHead() != NULL) {
-		x1 = x - shape_head->GetVertexHead()->GetX();
-		y1 = y - shape_head->GetVertexHead()->GetY();
-		if (x1 < 0) {
-			x1 = -1 * x1;
+		pre_x = x - shape_head->GetVertexHead()->GetX();
+		pre_y = y - shape_head->GetVertexHead()->GetY();
+		if (pre_x < 0) {
+			pre_x = -1 * pre_x;
 		}
-		if (y1 < 0) {
-			y1 = -1 * y1;
+		if (pre_y < 0) {
+			pre_y = -1 * pre_y;
 		}
 
-		if (x1 < 0.05 && y1 < 0.05) {
+		if (pre_x < 0.05 && pre_y < 0.05) {
 			return true;
 		}
 
@@ -356,6 +487,61 @@ double CAdminControl::CalcNaiseki(double a1, double a2, double b1, double b2)
 double CAdminControl::CalcGaiseki(double a1, double a2, double b1, double b2)
 {
 	return a1 * b2 - a2 * b1;
+}
+
+//xyz軸を表示する
+void CAdminControl::DrawAxis(void)
+{
+	glBegin(GL_LINES);
+
+	//x軸
+	glColor3f(1.0, 0.0, 0.0);
+	glVertex3f(-1.0, 0.0, 0.0);
+	glVertex3f(1.0, 0.0, 0.0);
+	
+	//y軸
+	glColor3f(0.0, 1.0, 0.0);
+	glVertex3f(0.0, -1.0, 0.0);
+	glVertex3f(0.0, 1.0, 0.0);
+
+	//z軸
+	glColor3f(0.0, 0.0, 1.0);
+	glVertex3f(0.0, 0.0, -1.0);
+	glVertex3f(0.0, 0.0, 1.0);
+
+	glEnd();
+}
+
+void CAdminControl::ChangeAxisFlag()
+{
+	if (AxisFlag == true) {
+		AxisFlag = false;
+	}
+	else if(AxisFlag==false){
+		AxisFlag = true;
+	}
+}
+
+void CAdminControl::LButtonSwitch(double x, double y)
+{
+	if (mode == ID_CREATE_MODE) {
+		CreateShape(x,y);
+	}
+	else if (mode == ID_EDIT_MODE) {
+		SelectEdit(x,y);
+	}
+}
+
+void CAdminControl::ChangeModeCreate()
+{
+	mode = ID_CREATE_MODE;
+	select_shape = NULL;
+	select_vertex = NULL;
+}
+
+void CAdminControl::ChangeModeEdit()
+{
+	mode = ID_EDIT_MODE;
 }
 
 void CAdminControl::FreeShape()

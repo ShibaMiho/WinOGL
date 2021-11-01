@@ -28,6 +28,9 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_WM_DESTROY()
 	ON_WM_ERASEBKGND()
 	ON_WM_SIZE()
+	ON_COMMAND(ID_XYZ, &CWinOGLView::OnXyz)
+	ON_COMMAND(ID_EDIT_MODE, &CWinOGLView::OnEditMode)
+	ON_COMMAND(ID_CREATE_MODE, &CWinOGLView::OnCreateMode)
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -123,7 +126,7 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 		Y = Y * hi;
 	}
 
-	AC.CreateShape(X, Y);
+	AC.LButtonSwitch(X, Y);
 
 	RedrawWindow();
 
@@ -203,4 +206,23 @@ void CWinOGLView::OnSize(UINT nType, int cx, int cy)
 	RedrawWindow();
 	wglMakeCurrent(clientDC.m_hDC, NULL);
 
+}
+
+
+void CWinOGLView::OnXyz()
+{
+	AC.ChangeAxisFlag();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnEditMode()
+{
+	AC.ChangeModeEdit();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnCreateMode()
+{
+	AC.ChangeModeCreate();
+	RedrawWindow();
 }
