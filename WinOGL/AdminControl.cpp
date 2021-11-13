@@ -8,6 +8,7 @@
 
 #define POINT_SELECT 1
 #define SHAPE_SELECT 2
+#define LINE_SELECT 3
 
 #include<math.h>
 
@@ -19,7 +20,7 @@ CAdminControl::CAdminControl()
 	select_vertex = NULL;
 	select_shape = NULL;
 	mode = ID_CREATE_MODE;
-	sab_mode = NULL;
+	sub_mode = NULL;
 }
 
 CAdminControl::~CAdminControl()
@@ -49,7 +50,7 @@ void CAdminControl::Draw()
 
 	if (mode == ID_EDIT_MODE) {
 
-		if (sab_mode == POINT_SELECT) {
+		if (sub_mode == POINT_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
 			glPointSize(8);
 
@@ -58,7 +59,7 @@ void CAdminControl::Draw()
 			glEnd();
 		}
 
-		if (sab_mode == SHAPE_SELECT) {
+		if (sub_mode == SHAPE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
 			glPointSize(8);
 
@@ -67,8 +68,22 @@ void CAdminControl::Draw()
 				glVertex2f(p->GetX(), p->GetY());
 			}
 			glEnd();
+			glBegin(GL_LINE_STRIP);
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				glVertex2f(p->GetX(), p->GetY());
+			}
+			glEnd();
+			
+		}
 
+		if (sub_mode == LINE_SELECT) {
+			glColor3f(0.0, 1.0, 0.0);
+			glPointSize(5);
 
+			glBegin(GL_LINE_STRIP);
+			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
+			glVertex2f(select_vertex->GetNext()->GetX(), select_vertex->GetNext()->GetY());
+			glEnd();
 		}
 	}
 	
@@ -161,17 +176,29 @@ void CAdminControl::CreateShape(double x, double y)
 
 void CAdminControl::SelectEdit(double x, double y)
 {
-	sab_mode = NULL;
+	sub_mode = NULL;
 	double x1 = 0.0;
 	double y1 = 0.0;
 	double sa_x = 0.0;
 	double sa_y = 0.0;
-	for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
-		CVertex* v = s->GetVertexHead();
-		//頂点の選択
-		while (v != NULL) {
-			x1 = v->GetX();
-			y1 = v->GetY();
+
+	double pa_x = 0.0;
+	double pa_y = 0.0;
+	double pb_x = 0.0;
+	double pb_y = 0.0;
+	double ab_x = 0.0;
+	double ab_y = 0.0;
+	double hantei = 0.0;
+	double bunsi = 0.0;
+
+	double s = 0.0;
+
+	for (CShape* shape = shape_head->GetNext(); shape!= NULL; shape = shape->GetNext()) {
+		//頂点の選択判定
+		CVertex* vertex = shape->GetVertexHead();
+		while (vertex != NULL) {
+			x1 = vertex->GetX();
+			y1 = vertex->GetY();
 
 			sa_x = x - x1;
 			sa_y = y - y1;
@@ -181,20 +208,53 @@ void CAdminControl::SelectEdit(double x, double y)
 			if (sa_y < 0) {
 				sa_y = -1 * sa_y;
 			}
-			if (sa_x < 0.05 && sa_y < 0.05) {
-				select_shape = s;
-				select_vertex = v;
-				sab_mode = POINT_SELECT;
+			if (sa_x < 0.01 && sa_y < 0.01) {
+				select_shape = shape;
+				select_vertex = vertex;
+				sub_mode = POINT_SELECT;
 				break;
 			}
-			v = v->GetNext();
+			vertex = vertex->GetNext();
 		}
 
-		if (sab_mode == NULL) {
-			CShape* shape = CalcNaigai2(x, y);
-			if (s == shape) {
-				sab_mode = SHAPE_SELECT;
-				select_shape = s;
+		//稜線の選択判定
+		if (sub_mode == NULL) {
+			CVertex* vertexA = shape->GetVertexHead();
+			while (vertexA->GetNext() != NULL) {
+				CVertex* vertexB = vertexA->GetNext();
+
+				pb_x = CalcVector(x,vertexB->GetX());
+				pb_y = CalcVector(y, vertexB->GetY());
+				ab_x = CalcVector(vertexA->GetX(), vertexB->GetX());
+				ab_y = CalcVector(vertexA->GetY(),vertexB->GetY());
+				s = CalcNaiseki(pb_x, pb_y, ab_x, ab_y) / CalcNaiseki(ab_x, ab_y, ab_x, ab_y);
+
+				if (0 <= s && s < 1.05) {
+					//最短距離の計算
+					pa_x = CalcVector(x,vertexA->GetX());
+					pa_y = CalcVector(y, vertexA->GetY());
+					bunsi = pa_x * ab_y - pa_y * ab_x;
+					if (bunsi < 0) {
+						bunsi = -1 * bunsi;
+					}
+					hantei = bunsi / sqrt(pow(ab_x, 2) + pow(ab_y, 2));
+					if (hantei < 0.01) {
+						select_shape = shape;
+						select_vertex = vertexA;
+						sub_mode = LINE_SELECT;
+						break;
+					}
+				}
+				vertexA = vertexA->GetNext();
+			}
+		}
+
+		//図形の選択
+		if (sub_mode == NULL) {
+			CShape* shape_naigai = CalcNaigai2(x, y);
+			if (shape == shape_naigai) {
+				sub_mode = SHAPE_SELECT;
+				select_shape = shape;
 			}
 		}
 		
@@ -537,6 +597,7 @@ void CAdminControl::ChangeModeCreate()
 	mode = ID_CREATE_MODE;
 	select_shape = NULL;
 	select_vertex = NULL;
+	sub_mode = NULL;
 }
 
 void CAdminControl::ChangeModeEdit()

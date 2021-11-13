@@ -14,7 +14,7 @@ public:
 
 	//図形を作る
 	void CreateShape(double x,double y);
-	//頂点
+	//編集する点を選択する
 	void SelectEdit(double x,double y);
 
 	//図形を追加する
@@ -61,6 +61,6 @@ private:
 	CVertex* select_vertex;
 	CShape* select_shape;
 	int mode;
-	int sab_mode;
+	int sub_mode;
 };
 
