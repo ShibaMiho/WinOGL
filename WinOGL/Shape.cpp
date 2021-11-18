@@ -48,6 +48,15 @@ int CShape::CountVertex()
 	return count;
 }
 
+CVertex* CShape::GetFirstVertex()
+{
+	CVertex* vertex=vertex_head;
+	while (vertex->GetNext() != NULL) {
+		vertex = vertex->GetNext();
+	}
+	return vertex;
+}
+
 void CShape::FreeVertex()
 {
 	while (vertex_head != NULL) {

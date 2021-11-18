@@ -23,6 +23,8 @@ public:
 	//¡‚Ì’¸“_”‚ğ•Ô‚·
 	int CountVertex();
 
+	CVertex* GetFirstVertex();
+
 	void FreeVertex();
 
 };

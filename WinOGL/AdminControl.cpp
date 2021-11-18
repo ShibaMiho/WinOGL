@@ -9,6 +9,7 @@
 #define POINT_SELECT 1
 #define SHAPE_SELECT 2
 #define LINE_SELECT 3
+#define POINT_MOVE 4
 
 #include<math.h>
 
@@ -17,8 +18,10 @@ CAdminControl::CAdminControl()
 {
 	shape_head = new CShape();
 	AxisFlag = false;
+	LButtonFlag = false;
 	select_vertex = NULL;
 	select_shape = NULL;
+	before_shape = NULL;
 	mode = ID_CREATE_MODE;
 	sub_mode = NULL;
 }
@@ -85,6 +88,32 @@ void CAdminControl::Draw()
 			glVertex2f(select_vertex->GetNext()->GetX(), select_vertex->GetNext()->GetY());
 			glEnd();
 		}
+
+		if (sub_mode == POINT_MOVE) {
+			glColor3f(1.0, 1.0, 1.0);
+			glPointSize(5);
+
+			for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
+				glBegin(GL_POINTS);		//í∏ì_ï`âÊ
+				for (CVertex* p = s->GetVertexHead(); p != NULL; p = p->GetNext()) {
+					glVertex2f(p->GetX(), p->GetY());
+				}
+				glEnd();
+
+				glBegin(GL_LINE_STRIP);		//ê¸ï`âÊ
+				for (CVertex* p = s->GetVertexHead(); p != NULL; p = p->GetNext()) {
+					glVertex2f(p->GetX(), p->GetY());
+				}
+				glEnd();
+			}
+
+			glColor3f(0.0, 1.0, 0.0);
+			glPointSize(8);
+
+			glBegin(GL_POINTS);		//í∏ì_ï`âÊ
+			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
+			glEnd();
+		}
 	}
 	
 	//AxisFlagÇ™trueÇÃÇ∆Ç´ç¿ïWé≤Çï`âÊÇ∑ÇÈ
@@ -117,7 +146,7 @@ void CAdminControl::CreateShape(double x, double y)
 			if (sa_y < 0) {
 				sa_y = -1 * sa_y;
 			}
-			if (sa_x <= 0.05 && sa_y <= 0.05) {
+			if (sa_x <= 0.03 && sa_y <= 0.03) {
 				x = sa->GetX();
 				y = sa->GetY();
 			}
@@ -174,6 +203,7 @@ void CAdminControl::CreateShape(double x, double y)
 	}
 }
 
+//sub_modeÇÃê›íË
 void CAdminControl::SelectEdit(double x, double y)
 {
 	sub_mode = NULL;
@@ -261,6 +291,38 @@ void CAdminControl::SelectEdit(double x, double y)
 	}
 }
 
+//å`èÛîªíË
+bool CAdminControl::CheckShape()
+{
+	bool hantei = NULL;
+
+	for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
+		CVertex* vertex = shape->GetVertexHead();
+		if (CalcKousa(vertex->GetX(), vertex->GetY(), vertex->GetNext()->GetX(), vertex->GetNext()->GetY(), shape) == true) {
+			hantei = false;
+			return false;
+			break;
+		}
+		if (hantei == NULL) {
+			if (CalcTakousa(shape) == true) {
+				hantei = false;
+				return false;
+				break;
+			}
+		}
+		if (hantei == NULL) {
+			if (CalcNaihou(shape) == true) {
+				hantei = false;
+				return false;
+				break;
+			}
+		}
+	}
+	if (hantei == NULL) {
+		return true;
+	}
+}
+
 //ê}å`Çí«â¡Ç∑ÇÈ
 void CAdminControl::AppendShape()
 {
@@ -271,7 +333,7 @@ void CAdminControl::AppendShape()
 	shape_head = shape;
 }
 
-//åç∑îªíËÇÇ∑ÇÈ
+//é©å»åç∑îªíËÇÇ∑ÇÈ
 bool CAdminControl::CalcKousa(double x1, double y1, double x2, double y2)
 {
 	CVertex* p = shape_head->GetVertexHead()->GetNext();
@@ -312,6 +374,49 @@ bool CAdminControl::CalcKousa(double x1, double y1, double x2, double y2)
 			return true;
 		}
 		
+	}
+	return false;
+}
+
+bool CAdminControl::CalcKousa(double x1, double y1, double x2, double y2, CShape* shape)
+{
+	CVertex* p = shape->GetVertexHead()->GetNext()->GetNext();
+	while (p->GetNext() != NULL) {
+
+		double x3 = p->GetX();
+		double y3 = p->GetY();
+
+		p = p->GetNext();
+		double x4 = p->GetX();
+		double y4 = p->GetY();
+
+		double a_x = CalcVector(x1, x2);
+		double a_y = CalcVector(y1, y2);
+
+		double a1_x = CalcVector(x4, x2);
+		double a1_y = CalcVector(y4, y2);
+
+		double a2_x = CalcVector(x3, x2);
+		double a2_y = CalcVector(y3, y2);
+
+		double b_x = CalcVector(x3, x4);
+		double b_y = CalcVector(y3, y4);
+
+		double b1_x = CalcVector(x2, x4);
+		double b1_y = CalcVector(y2, y4);
+
+		double b2_x = CalcVector(x1, x4);
+		double b2_y = CalcVector(y1, y4);
+
+		double ca1 = CalcGaiseki(a_x, a_y, a1_x, a1_y);
+		double ca2 = CalcGaiseki(a_x, a_y, a2_x, a2_y);
+		double cb1 = CalcGaiseki(b_x, b_y, b1_x, b1_y);
+		double cb2 = CalcGaiseki(b_x, b_y, b2_x, b2_y);
+
+		if (ca1 * ca2 < 0 && cb1 * cb2 < 0) {
+			//åç∑Ç∑ÇÈéû
+			return true;
+		}
 	}
 	return false;
 }
@@ -361,6 +466,63 @@ bool CAdminControl::CalcTakousa(double x1,double y1)
 				return true;
 			}
 
+		}
+	}
+	return false;
+}
+
+bool CAdminControl::CalcTakousa(CShape* shape)
+{
+	CVertex* vertex = shape->GetVertexHead();
+	while (vertex->GetNext() != NULL) {
+		double x1 = vertex->GetX();
+		double y1 = vertex->GetY();
+		
+		vertex = vertex->GetNext();
+		double x2 = vertex->GetX();
+		double y2 = vertex->GetY();
+
+		double a_x = CalcVector(x1, x2);
+		double a_y = CalcVector(y1, y2);
+
+		for (CShape* s = shape_head->GetNext(); s != NULL; s = s->GetNext()) {
+			if (shape != s) {
+				CVertex* p = s->GetVertexHead();
+				while (p->GetNext() != NULL) {
+
+					double x3 = p->GetX();
+					double y3 = p->GetY();
+
+					p = p->GetNext();
+					double x4 = p->GetX();
+					double y4 = p->GetY();
+
+					double a1_x = CalcVector(x4, x2);
+					double a1_y = CalcVector(y4, y2);
+
+					double a2_x = CalcVector(x3, x2);
+					double a2_y = CalcVector(y3, y2);
+
+					double b_x = CalcVector(x3, x4);
+					double b_y = CalcVector(y3, y4);
+
+					double b1_x = CalcVector(x2, x4);
+					double b1_y = CalcVector(y2, y4);
+
+					double b2_x = CalcVector(x1, x4);
+					double b2_y = CalcVector(y1, y4);
+
+					double ca1 = CalcGaiseki(a_x, a_y, a1_x, a1_y);
+					double ca2 = CalcGaiseki(a_x, a_y, a2_x, a2_y);
+					double cb1 = CalcGaiseki(b_x, b_y, b1_x, b1_y);
+					double cb2 = CalcGaiseki(b_x, b_y, b2_x, b2_y);
+
+					if (ca1 * ca2 <= 0 && cb1 * cb2 <= 0) {
+						//ëºåç∑Ç∑ÇÈéû
+						return true;
+					}
+				}
+			}
 		}
 	}
 	return false;
@@ -505,7 +667,56 @@ bool CAdminControl::CalcNaihou(double x, double y)
 	}
 	
 	return false;
-	
+}
+
+bool CAdminControl::CalcNaihou(CShape* shape)
+{
+	for (CShape* s = shape_head->GetNext(); s != NULL; s = s->GetNext()) {
+		if (shape != s) {
+			double sum = 0.0;
+			double kakudo = 0.0;
+
+			CVertex* p = s->GetVertexHead();
+			double x3 = p->GetX();
+			double y3 = p->GetY();
+
+			CVertex* vertex = shape->GetVertexHead();
+			while (vertex->GetNext() != NULL) {
+				double x1 = vertex->GetX();
+				double y1 = vertex->GetY();
+
+				vertex = vertex->GetNext();
+				double x2 = vertex->GetX();
+				double y2 = vertex->GetY();
+
+				double a_x = CalcVector(x1, x3);
+				double a_y = CalcVector(y1, y3);
+
+				double b_x = CalcVector(x2, x3);
+				double b_y = CalcVector(y2, y3);
+
+				double nai = CalcNaiseki(a_x, a_y, b_x, b_y);
+				double gai = CalcGaiseki(a_x, a_y, b_x, b_y);
+
+				kakudo = atan2(gai, nai);
+				sum = kakudo + sum;
+			}
+
+			if (sum < 0) {
+				sum = -1 * sum;
+			}
+
+			double hantei = sum - 2 * M_PI;
+			if (hantei < 0) {
+				hantei = -1 * hantei;
+			}
+			if (hantei <= 0.001) {
+				//ì‡ïÔÇ∑ÇÈéû
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 //1Ç¬ëOÇÃì_Ç∆àÍèèÇ©î‰ärÇ∑ÇÈ
@@ -582,6 +793,16 @@ void CAdminControl::ChangeAxisFlag()
 	}
 }
 
+void CAdminControl::SetLButtonFlag(bool x)
+{
+	LButtonFlag = x;
+}
+
+bool CAdminControl::GetLButtonFlag()
+{
+	return LButtonFlag;
+}
+
 void CAdminControl::LButtonSwitch(double x, double y)
 {
 	if (mode == ID_CREATE_MODE) {
@@ -592,6 +813,22 @@ void CAdminControl::LButtonSwitch(double x, double y)
 	}
 }
 
+void CAdminControl::LButtonUpSwitch(double x, double y)
+{
+	if (mode==ID_EDIT_MODE) {
+		if (sub_mode==POINT_SELECT) {
+			if (CheckSelectVertex() == true) {
+				select_shape->GetFirstVertex()->SetXY(x,y);
+			}
+			select_vertex->SetXY(x,y);
+			if (CheckShape() == false) {
+				RedoShape();
+			}
+		}
+	}
+}
+
+//Create_modeÇ÷ÇÃêÿÇËë÷Ç¶
 void CAdminControl::ChangeModeCreate()
 {
 	mode = ID_CREATE_MODE;
@@ -600,9 +837,61 @@ void CAdminControl::ChangeModeCreate()
 	sub_mode = NULL;
 }
 
+//Edit_modeÇ÷ÇÃêÿÇËë÷Ç¶
 void CAdminControl::ChangeModeEdit()
 {
 	mode = ID_EDIT_MODE;
+}
+
+//modeÇÃéÊìæ
+int CAdminControl::GetMode()
+{
+	return mode;
+}
+
+//sub_modeÇÃéÊìæ
+int CAdminControl::GetSubMode()
+{
+	return sub_mode;
+}
+
+void CAdminControl::SetSubMode(int x)
+{
+	sub_mode = x;
+}
+
+void CAdminControl::SaveBeforeShape()
+{
+	if (select_shape != NULL) {
+		before_shape = new CShape();
+		for (CVertex* vertex = select_shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+			before_shape->AppendVertex(vertex->GetX(), vertex->GetY());
+			if (select_vertex != NULL) {
+				if (select_vertex->GetX() == vertex->GetX() && select_vertex->GetY() == vertex->GetY()) {
+					before_select_vertex = before_shape->GetVertexHead();
+				}
+			}
+		}
+	}
+}
+
+void CAdminControl::RedoShape()
+{
+	select_shape->FreeVertex();
+	for (CVertex* vertex = before_shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+		select_shape->AppendVertex(vertex->GetX(), vertex->GetY());
+	}
+	if (before_select_vertex != NULL) {
+		select_vertex = before_select_vertex;
+	}
+}
+
+bool CAdminControl::CheckSelectVertex()
+{
+	if (select_vertex==select_shape->GetVertexHead()) {
+		return true;
+	}
+	return false;
 }
 
 void CAdminControl::FreeShape()

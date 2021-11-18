@@ -31,6 +31,8 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_COMMAND(ID_XYZ, &CWinOGLView::OnXyz)
 	ON_COMMAND(ID_EDIT_MODE, &CWinOGLView::OnEditMode)
 	ON_COMMAND(ID_CREATE_MODE, &CWinOGLView::OnCreateMode)
+	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEMOVE()
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -103,6 +105,8 @@ CWinOGLDoc* CWinOGLView::GetDocument() const // デバッグ以外のバージ�
 
 void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 {
+	AC.SetLButtonFlag(true);
+
 	CRect rect;
 	GetClientRect(rect);
 
@@ -114,6 +118,38 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 	X = (X - 0.5) * 2;
 	Y = (Y - 0.5) * 2;
 
+	double hi;
+	if (rect.Width() > rect.Height())
+	{
+		hi = (double)rect.Width() / rect.Height();
+		X = X * hi;
+	}
+	else {
+		hi = (double)rect.Height() / rect.Width();
+		Y = Y * hi;
+	}
+	AC.LButtonSwitch(X, Y);
+
+	AC.SaveBeforeShape();
+
+	RedrawWindow();
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CWinOGLView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	AC.SetLButtonFlag(false);
+
+	CRect rect;
+	GetClientRect(rect);
+
+	double X;
+	double Y;
+	X = (double)point.x / rect.Width();		//正規化座標系変換
+	Y = 1.0 - (double)point.y / rect.Height();//正規化座標系変換
+
+	X = (X - 0.5) * 2;
+	Y = (Y - 0.5) * 2;
 
 	double hi;
 	if (rect.Width() > rect.Height())
@@ -126,11 +162,41 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 		Y = Y * hi;
 	}
 
-	AC.LButtonSwitch(X, Y);
+	AC.LButtonUpSwitch(X,Y);
 
 	RedrawWindow();
+	CView::OnLButtonUp(nFlags, point);
+	
+}
 
-	CView::OnLButtonDown(nFlags, point);
+
+void CWinOGLView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	if (AC.GetLButtonFlag() == true) {
+		CRect rect;
+		GetClientRect(rect);
+		double X;
+		double Y;
+		X = (double)point.x / rect.Width();		//正規化座標系変換
+		Y = 1.0 - (double)point.y / rect.Height();//正規化座標系変換
+
+		X = (X - 0.5) * 2;
+		Y = (Y - 0.5) * 2;
+
+		double hi;
+		if (rect.Width() > rect.Height())
+		{
+			hi = (double)rect.Width() / rect.Height();
+			X = X * hi;
+		}
+		else {
+			hi = (double)rect.Height() / rect.Width();
+			Y = Y * hi;
+		}
+
+		RedrawWindow();
+		CView::OnMouseMove(nFlags, point);
+	}
 }
 
 

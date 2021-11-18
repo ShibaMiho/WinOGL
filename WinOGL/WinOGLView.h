@@ -54,6 +54,8 @@ public:
 	afx_msg void OnXyz();
 	afx_msg void OnEditMode();
 	afx_msg void OnCreateMode();
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 };
 
 #ifndef _DEBUG  // WinOGLView.cpp のデバッグ バージョン
