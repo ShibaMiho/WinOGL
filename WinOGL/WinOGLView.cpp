@@ -129,8 +129,8 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 		hi = (double)rect.Height() / rect.Width();
 		Y = Y * hi;
 	}
-	AC.LButtonDownSwitch(X, Y);
 
+	AC.LButtonDownSwitch(X, Y);
 	AC.SaveBeforeShape();
 
 	RedrawWindow();
@@ -195,7 +195,7 @@ void CWinOGLView::OnMouseMove(UINT nFlags, CPoint point)
 			Y = Y * hi;
 		}
 
-		//AC.MouseMoveSwitch(X, Y);
+		AC.MouseMoveSwitch(X, Y);
 
 		RedrawWindow();
 		CView::OnMouseMove(nFlags, point);

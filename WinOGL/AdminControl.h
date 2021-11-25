@@ -82,6 +82,7 @@ private:
 	CShape* shape_head;
 	bool AxisFlag;
 	bool LButtonFlag;
+	bool MoveErrorFlag;
 	CVertex* select_vertex;
 	CVertex* before_select_vertex;
 	CShape* select_shape;

@@ -9,7 +9,6 @@
 #define POINT_SELECT 1
 #define SHAPE_SELECT 2
 #define LINE_SELECT 3
-#define POINT_MOVE 4
 
 #include<math.h>
 
@@ -19,6 +18,7 @@ CAdminControl::CAdminControl()
 	shape_head = new CShape();
 	AxisFlag = false;
 	LButtonFlag = false;
+	MoveErrorFlag = false;
 	select_vertex = NULL;
 	before_select_vertex = NULL;
 	select_shape = NULL;
@@ -61,6 +61,16 @@ void CAdminControl::Draw()
 			glBegin(GL_POINTS);		//’¸“_•`‰æ
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
 			glEnd();
+
+			if (MoveErrorFlag == true) {
+				glColor3f(1.0, 0.0, 0.0);
+				glPointSize(8);
+
+				glBegin(GL_POINTS);		//’¸“_•`‰æ
+				glVertex2f(select_vertex->GetX(), select_vertex->GetY());
+				glEnd();
+
+			}
 		}
 
 		if (sub_mode == SHAPE_SELECT) {
@@ -82,7 +92,7 @@ void CAdminControl::Draw()
 
 		if (sub_mode == LINE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(5);
+			glPointSize(8);
 
 			glBegin(GL_LINE_STRIP);
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
@@ -90,31 +100,6 @@ void CAdminControl::Draw()
 			glEnd();
 		}
 
-		if (sub_mode == POINT_MOVE) {
-			glColor3f(1.0, 1.0, 1.0);
-			glPointSize(5);
-
-			for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
-				glBegin(GL_POINTS);		//’¸“_•`‰æ
-				for (CVertex* p = s->GetVertexHead(); p != NULL; p = p->GetNext()) {
-					glVertex2f(p->GetX(), p->GetY());
-				}
-				glEnd();
-
-				glBegin(GL_LINE_STRIP);		//ü•`‰æ
-				for (CVertex* p = s->GetVertexHead(); p != NULL; p = p->GetNext()) {
-					glVertex2f(p->GetX(), p->GetY());
-				}
-				glEnd();
-			}
-
-			glColor3f(1.0, 0.0, 0.0);
-			glPointSize(8);
-
-			glBegin(GL_POINTS);		//’¸“_•`‰æ
-			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
-			glEnd();
-		}
 	}
 	
 	//AxisFlag‚ªtrue‚Ì‚Æ‚«À•WŽ²‚ð•`‰æ‚·‚é
@@ -784,9 +769,10 @@ void CAdminControl::LButtonUpSwitch(double x, double y)
 				select_shape->GetFirstVertex()->SetXY(x, y);
 			}
 			select_vertex->SetXY(x, y);
-			if (sub_mode = POINT_MOVE) {
+			if (CheckShape() == false) {
 				RedoShape();
 			}
+			MoveErrorFlag = false;
 		}
 	}
 }
@@ -800,7 +786,10 @@ void CAdminControl::MouseMoveSwitch(double x, double y)
 			}
 			select_vertex->SetXY(x, y);
 			if (CheckShape() == false) {
-				sub_mode = POINT_MOVE;
+				MoveErrorFlag = true;
+			}
+			else {
+				MoveErrorFlag = false;
 			}
 		}
 	}
