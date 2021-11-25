@@ -24,7 +24,7 @@ public:
 
 	//自己交差判定をする
 	bool CalcKousa(double x1,double y1,double x2,double y2);
-	bool CalcKousa(double x1, double y1, double x2, double y2, CShape* shape);
+	bool CalcKousa(CShape* shape);
 	//他交差判定をする
 	bool CalcTakousa(double x1,double y1);
 	bool CalcTakousa(CShape* shape);
@@ -45,7 +45,8 @@ public:
 	//外積の計算をする
 	double CalcGaiseki(double a1, double a2, double b1, double b2);
 
-	void FreeShape();
+	//絶対値の計算をする
+	double CalcAbsoluteValue(double x);
 
 	//xyz軸を表示する
 	void DrawAxis();
@@ -55,25 +56,27 @@ public:
 	void SetLButtonFlag(bool x);
 	bool GetLButtonFlag();
 
-	//modeの判定
-	void LButtonSwitch(double x,double y);
+	void LButtonDownSwitch(double x,double y);
 	void LButtonUpSwitch(double x, double y);
+	void MouseMoveSwitch(double x, double y);
+	void RButtonSwitch(double x, double y);
 
 	//Create_modeへの切り替え
 	void ChangeModeCreate();
 	//Edit_modeへの切り替え
 	void ChangeModeEdit();
-	//modeの取得
-	int GetMode();
-	//sub_modeの取得
-	int GetSubMode();
 
-	void SetSubMode(int x);
-
+	//shapeの保存
 	void SaveBeforeShape();
 	void RedoShape();
 
+	void DeleteSelectVertex();
+	void AddVertex(double x, double y);
+
 	bool CheckSelectVertex();
+	CVertex* CheckClickVertexLine(double x, double y, CShape* shape);
+
+	void FreeShape();
 
 private:
 	CShape* shape_head;
@@ -82,7 +85,7 @@ private:
 	CVertex* select_vertex;
 	CVertex* before_select_vertex;
 	CShape* select_shape;
-	CShape* before_shape;
+	CShape* before_select_shape;
 	int mode;
 	int sub_mode;
 	

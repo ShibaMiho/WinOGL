@@ -22,6 +22,11 @@ CShape* CShape::GetNext()
 	return next;
 }
 
+void CShape::SetVertexHead(CVertex* vertex)
+{
+	vertex_head = vertex;
+}
+
 CVertex* CShape::GetVertexHead()
 {
 	return vertex_head;
@@ -48,6 +53,7 @@ int CShape::CountVertex()
 	return count;
 }
 
+//‰‚ß‚Ì’¸“_‚ğ•Ô‚·
 CVertex* CShape::GetFirstVertex()
 {
 	CVertex* vertex=vertex_head;

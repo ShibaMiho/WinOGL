@@ -15,6 +15,7 @@ public:
 	void SetNext(CShape* n);
 	CShape* GetNext();
 
+	void SetVertexHead(CVertex* vertex);
 	CVertex* GetVertexHead();
 
 	//’¸“_‚ğ’Ç‰Á‚·‚é
@@ -23,6 +24,7 @@ public:
 	//¡‚Ì’¸“_”‚ğ•Ô‚·
 	int CountVertex();
 
+	//‰‚ß‚Ì’¸“_‚ğ•Ô‚·
 	CVertex* GetFirstVertex();
 
 	void FreeVertex();

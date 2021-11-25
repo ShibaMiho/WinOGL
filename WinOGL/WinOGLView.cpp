@@ -33,6 +33,7 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_COMMAND(ID_CREATE_MODE, &CWinOGLView::OnCreateMode)
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
+	ON_WM_RBUTTONDOWN()
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -128,7 +129,7 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 		hi = (double)rect.Height() / rect.Width();
 		Y = Y * hi;
 	}
-	AC.LButtonSwitch(X, Y);
+	AC.LButtonDownSwitch(X, Y);
 
 	AC.SaveBeforeShape();
 
@@ -194,11 +195,44 @@ void CWinOGLView::OnMouseMove(UINT nFlags, CPoint point)
 			Y = Y * hi;
 		}
 
+		//AC.MouseMoveSwitch(X, Y);
+
 		RedrawWindow();
 		CView::OnMouseMove(nFlags, point);
 	}
 }
 
+void CWinOGLView::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	CRect rect;
+	GetClientRect(rect);
+
+	double X;
+	double Y;
+	X = (double)point.x / rect.Width();			//正規化座標系変換
+	Y = 1.0 - (double)point.y / rect.Height();	//正規化座標系変換
+
+	X = (X - 0.5) * 2;
+	Y = (Y - 0.5) * 2;
+
+	double hi;
+	if (rect.Width() > rect.Height())
+	{
+		hi = (double)rect.Width() / rect.Height();
+		X = X * hi;
+	}
+	else {
+		hi = (double)rect.Height() / rect.Width();
+		Y = Y * hi;
+	}
+
+	AC.SaveBeforeShape();
+
+	AC.RButtonSwitch(X, Y);
+
+	RedrawWindow();
+	CView::OnRButtonDown(nFlags, point);
+}
 
 int CWinOGLView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
@@ -229,7 +263,6 @@ int CWinOGLView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	return 0;
 }
-
 
 void CWinOGLView::OnDestroy()
 {
@@ -292,3 +325,4 @@ void CWinOGLView::OnCreateMode()
 	AC.ChangeModeCreate();
 	RedrawWindow();
 }
+

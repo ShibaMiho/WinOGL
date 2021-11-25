@@ -20,8 +20,9 @@ CAdminControl::CAdminControl()
 	AxisFlag = false;
 	LButtonFlag = false;
 	select_vertex = NULL;
+	before_select_vertex = NULL;
 	select_shape = NULL;
-	before_shape = NULL;
+	before_select_shape = NULL;
 	mode = ID_CREATE_MODE;
 	sub_mode = NULL;
 }
@@ -107,7 +108,7 @@ void CAdminControl::Draw()
 				glEnd();
 			}
 
-			glColor3f(0.0, 1.0, 0.0);
+			glColor3f(1.0, 0.0, 0.0);
 			glPointSize(8);
 
 			glBegin(GL_POINTS);		//頂点描画
@@ -133,22 +134,15 @@ void CAdminControl::CreateShape(double x, double y)
 		if (shape_head->CountVertex() >= 3) {
 
 			//打たれた点が初めの点とほぼ一緒の時
-			CVertex* sa = shape_head->GetVertexHead();
-			while (sa->GetNext() != NULL)
-			{
-				sa = sa->GetNext();
-			}
-			double sa_x = x - sa->GetX();
-			double sa_y = y - sa->GetY();
-			if (sa_x < 0) {
-				sa_x = -1 * sa_x;
-			}
-			if (sa_y < 0) {
-				sa_y = -1 * sa_y;
-			}
+			double sa_x = x - shape_head->GetFirstVertex()->GetX();
+			double sa_y = y - shape_head->GetFirstVertex()->GetY();
+			
+			sa_x = CalcAbsoluteValue(sa_x);
+			sa_y = CalcAbsoluteValue(sa_y);
+
 			if (sa_x <= 0.03 && sa_y <= 0.03) {
-				x = sa->GetX();
-				y = sa->GetY();
+				x = shape_head->GetFirstVertex()->GetX();
+				y = shape_head->GetFirstVertex()->GetY();
 			}
 
 			if (CalcKousa(x, y, vertex->GetX(), vertex->GetY()) == false) {
@@ -156,23 +150,13 @@ void CAdminControl::CreateShape(double x, double y)
 					if (CalcNaihou(x, y) == false) {
 						//交差、他交差、内包していない場合
 
-						CVertex* p = shape_head->GetVertexHead();
-
-						while (p->GetNext() != NULL)
-						{
-							p = p->GetNext();
-						}
+						CVertex* p = shape_head->GetFirstVertex();
 
 						double p_x = p->GetX() - x;
 						double p_y = p->GetY() - y;
 
-						//絶対値を取る
-						if (p_x < 0) {
-							p_x = -1 * p_x;
-						}
-						if (p_y < 0) {
-							p_y = -1 * p_y;
-						}
+						p_x = CalcAbsoluteValue(p_x);
+						p_y = CalcAbsoluteValue(p_y);
 
 						if (p_x <= 0.05 && p_y <= 0.05) {
 							shape_head->AppendVertex(p->GetX(), p->GetY());
@@ -212,16 +196,7 @@ void CAdminControl::SelectEdit(double x, double y)
 	double sa_x = 0.0;
 	double sa_y = 0.0;
 
-	double pa_x = 0.0;
-	double pa_y = 0.0;
-	double pb_x = 0.0;
-	double pb_y = 0.0;
-	double ab_x = 0.0;
-	double ab_y = 0.0;
-	double hantei = 0.0;
-	double bunsi = 0.0;
-
-	double s = 0.0;
+	CVertex* vertex1 = NULL;
 
 	for (CShape* shape = shape_head->GetNext(); shape!= NULL; shape = shape->GetNext()) {
 		//頂点の選択判定
@@ -230,14 +205,9 @@ void CAdminControl::SelectEdit(double x, double y)
 			x1 = vertex->GetX();
 			y1 = vertex->GetY();
 
-			sa_x = x - x1;
-			sa_y = y - y1;
-			if (sa_x < 0) {
-				sa_x = -1 * sa_x;
-			}
-			if (sa_y < 0) {
-				sa_y = -1 * sa_y;
-			}
+			sa_x = CalcAbsoluteValue(x - x1);
+			sa_y = CalcAbsoluteValue(y - y1);
+
 			if (sa_x < 0.01 && sa_y < 0.01) {
 				select_shape = shape;
 				select_vertex = vertex;
@@ -249,33 +219,11 @@ void CAdminControl::SelectEdit(double x, double y)
 
 		//稜線の選択判定
 		if (sub_mode == NULL) {
-			CVertex* vertexA = shape->GetVertexHead();
-			while (vertexA->GetNext() != NULL) {
-				CVertex* vertexB = vertexA->GetNext();
-
-				pb_x = CalcVector(x,vertexB->GetX());
-				pb_y = CalcVector(y, vertexB->GetY());
-				ab_x = CalcVector(vertexA->GetX(), vertexB->GetX());
-				ab_y = CalcVector(vertexA->GetY(),vertexB->GetY());
-				s = CalcNaiseki(pb_x, pb_y, ab_x, ab_y) / CalcNaiseki(ab_x, ab_y, ab_x, ab_y);
-
-				if (0 <= s && s < 1.05) {
-					//最短距離の計算
-					pa_x = CalcVector(x,vertexA->GetX());
-					pa_y = CalcVector(y, vertexA->GetY());
-					bunsi = pa_x * ab_y - pa_y * ab_x;
-					if (bunsi < 0) {
-						bunsi = -1 * bunsi;
-					}
-					hantei = bunsi / sqrt(pow(ab_x, 2) + pow(ab_y, 2));
-					if (hantei < 0.01) {
-						select_shape = shape;
-						select_vertex = vertexA;
-						sub_mode = LINE_SELECT;
-						break;
-					}
-				}
-				vertexA = vertexA->GetNext();
+			vertex1 = CheckClickVertexLine(x, y, shape);
+			if (vertex1 != NULL) {
+				select_vertex = vertex1;
+				select_shape = shape;
+				sub_mode = LINE_SELECT;
 			}
 		}
 
@@ -298,7 +246,7 @@ bool CAdminControl::CheckShape()
 
 	for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
 		CVertex* vertex = shape->GetVertexHead();
-		if (CalcKousa(vertex->GetX(), vertex->GetY(), vertex->GetNext()->GetX(), vertex->GetNext()->GetY(), shape) == true) {
+		if (CalcKousa(shape) == true) {
 			hantei = false;
 			return false;
 			break;
@@ -378,44 +326,55 @@ bool CAdminControl::CalcKousa(double x1, double y1, double x2, double y2)
 	return false;
 }
 
-bool CAdminControl::CalcKousa(double x1, double y1, double x2, double y2, CShape* shape)
+bool CAdminControl::CalcKousa(CShape* shape)
 {
-	CVertex* p = shape->GetVertexHead()->GetNext()->GetNext();
-	while (p->GetNext() != NULL) {
+	CVertex* p1 = shape->GetVertexHead();
+	if(shape->CountVertex() >= 4){
+		while (p1->GetNext() != NULL) {
+			double x1 = p1->GetX();
+			double y1 = p1->GetY();
 
-		double x3 = p->GetX();
-		double y3 = p->GetY();
+			p1 = p1->GetNext();
+			double x2 = p1->GetX();
+			double y2 = p1->GetY();
 
-		p = p->GetNext();
-		double x4 = p->GetX();
-		double y4 = p->GetY();
+			CVertex* p2 = shape->GetVertexHead()->GetNext()->GetNext();
+			while (p2->GetNext() != NULL) {
+				double x3 = p2->GetX();
+				double y3 = p2->GetY();
 
-		double a_x = CalcVector(x1, x2);
-		double a_y = CalcVector(y1, y2);
+				p2 = p2->GetNext();
+				double x4 = p2->GetX();
+				double y4 = p2->GetY();
 
-		double a1_x = CalcVector(x4, x2);
-		double a1_y = CalcVector(y4, y2);
+				double a_x = CalcVector(x1, x2);
+				double a_y = CalcVector(y1, y2);
 
-		double a2_x = CalcVector(x3, x2);
-		double a2_y = CalcVector(y3, y2);
+				double a1_x = CalcVector(x4, x2);
+				double a1_y = CalcVector(y4, y2);
 
-		double b_x = CalcVector(x3, x4);
-		double b_y = CalcVector(y3, y4);
+				double a2_x = CalcVector(x3, x2);
+				double a2_y = CalcVector(y3, y2);
 
-		double b1_x = CalcVector(x2, x4);
-		double b1_y = CalcVector(y2, y4);
+				double b_x = CalcVector(x3, x4);
+				double b_y = CalcVector(y3, y4);
 
-		double b2_x = CalcVector(x1, x4);
-		double b2_y = CalcVector(y1, y4);
+				double b1_x = CalcVector(x2, x4);
+				double b1_y = CalcVector(y2, y4);
 
-		double ca1 = CalcGaiseki(a_x, a_y, a1_x, a1_y);
-		double ca2 = CalcGaiseki(a_x, a_y, a2_x, a2_y);
-		double cb1 = CalcGaiseki(b_x, b_y, b1_x, b1_y);
-		double cb2 = CalcGaiseki(b_x, b_y, b2_x, b2_y);
+				double b2_x = CalcVector(x1, x4);
+				double b2_y = CalcVector(y1, y4);
 
-		if (ca1 * ca2 < 0 && cb1 * cb2 < 0) {
-			//交差する時
-			return true;
+				double ca1 = CalcGaiseki(a_x, a_y, a1_x, a1_y);
+				double ca2 = CalcGaiseki(a_x, a_y, a2_x, a2_y);
+				double cb1 = CalcGaiseki(b_x, b_y, b1_x, b1_y);
+				double cb2 = CalcGaiseki(b_x, b_y, b2_x, b2_y);
+
+				if (ca1 * ca2 < 0 && cb1 * cb2 < 0) {
+					//交差する時
+					return true;
+				}
+			}
 		}
 	}
 	return false;
@@ -725,15 +684,9 @@ bool CAdminControl::CalcBeforeSame(double x, double y)
 	double pre_x = 0.0;
 	double pre_y = 0.0;
 	if (shape_head->GetVertexHead() != NULL) {
-		pre_x = x - shape_head->GetVertexHead()->GetX();
-		pre_y = y - shape_head->GetVertexHead()->GetY();
-		if (pre_x < 0) {
-			pre_x = -1 * pre_x;
-		}
-		if (pre_y < 0) {
-			pre_y = -1 * pre_y;
-		}
-
+		pre_x = CalcAbsoluteValue(x - shape_head->GetVertexHead()->GetX());
+		pre_y = CalcAbsoluteValue(y - shape_head->GetVertexHead()->GetY());
+		
 		if (pre_x < 0.05 && pre_y < 0.05) {
 			return true;
 		}
@@ -760,6 +713,15 @@ double CAdminControl::CalcGaiseki(double a1, double a2, double b1, double b2)
 	return a1 * b2 - a2 * b1;
 }
 
+//絶対値の計算をする
+double CAdminControl::CalcAbsoluteValue(double x)
+{
+	if (x < 0) {
+		x = -1 * x;
+	}
+	return x;
+}
+
 //xyz軸を表示する
 void CAdminControl::DrawAxis(void)
 {
@@ -783,6 +745,7 @@ void CAdminControl::DrawAxis(void)
 	glEnd();
 }
 
+//AxisFlagの切り替え
 void CAdminControl::ChangeAxisFlag()
 {
 	if (AxisFlag == true) {
@@ -803,7 +766,7 @@ bool CAdminControl::GetLButtonFlag()
 	return LButtonFlag;
 }
 
-void CAdminControl::LButtonSwitch(double x, double y)
+void CAdminControl::LButtonDownSwitch(double x, double y)
 {
 	if (mode == ID_CREATE_MODE) {
 		CreateShape(x,y);
@@ -815,15 +778,44 @@ void CAdminControl::LButtonSwitch(double x, double y)
 
 void CAdminControl::LButtonUpSwitch(double x, double y)
 {
-	if (mode==ID_EDIT_MODE) {
-		if (sub_mode==POINT_SELECT) {
+	if (mode == ID_EDIT_MODE) {
+		if (sub_mode == POINT_SELECT) {
 			if (CheckSelectVertex() == true) {
-				select_shape->GetFirstVertex()->SetXY(x,y);
+				select_shape->GetFirstVertex()->SetXY(x, y);
 			}
-			select_vertex->SetXY(x,y);
-			if (CheckShape() == false) {
+			select_vertex->SetXY(x, y);
+			if (sub_mode = POINT_MOVE) {
 				RedoShape();
 			}
+		}
+	}
+}
+
+void CAdminControl::MouseMoveSwitch(double x, double y)
+{
+	if (mode == ID_EDIT_MODE) {
+		if (sub_mode == POINT_SELECT) {
+			if (CheckSelectVertex() == true) {
+				select_shape->GetFirstVertex()->SetXY(x, y);
+			}
+			select_vertex->SetXY(x, y);
+			if (CheckShape() == false) {
+				sub_mode = POINT_MOVE;
+			}
+		}
+	}
+}
+
+void CAdminControl::RButtonSwitch(double x, double y)
+{
+	if (mode == ID_EDIT_MODE) {
+		if (sub_mode == POINT_SELECT) {
+			//頂点削除
+			DeleteSelectVertex();
+		}
+		if (sub_mode == LINE_SELECT) {
+			//頂点追加
+			AddVertex(x, y);
 		}
 	}
 }
@@ -832,9 +824,9 @@ void CAdminControl::LButtonUpSwitch(double x, double y)
 void CAdminControl::ChangeModeCreate()
 {
 	mode = ID_CREATE_MODE;
+	sub_mode = NULL;
 	select_shape = NULL;
 	select_vertex = NULL;
-	sub_mode = NULL;
 }
 
 //Edit_modeへの切り替え
@@ -843,32 +835,16 @@ void CAdminControl::ChangeModeEdit()
 	mode = ID_EDIT_MODE;
 }
 
-//modeの取得
-int CAdminControl::GetMode()
-{
-	return mode;
-}
-
-//sub_modeの取得
-int CAdminControl::GetSubMode()
-{
-	return sub_mode;
-}
-
-void CAdminControl::SetSubMode(int x)
-{
-	sub_mode = x;
-}
-
+//shapeの保存
 void CAdminControl::SaveBeforeShape()
 {
 	if (select_shape != NULL) {
-		before_shape = new CShape();
+		before_select_shape = new CShape();
 		for (CVertex* vertex = select_shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
-			before_shape->AppendVertex(vertex->GetX(), vertex->GetY());
+			before_select_shape->AppendVertex(vertex->GetX(), vertex->GetY());
 			if (select_vertex != NULL) {
 				if (select_vertex->GetX() == vertex->GetX() && select_vertex->GetY() == vertex->GetY()) {
-					before_select_vertex = before_shape->GetVertexHead();
+					before_select_vertex = before_select_shape->GetVertexHead();
 				}
 			}
 		}
@@ -878,7 +854,7 @@ void CAdminControl::SaveBeforeShape()
 void CAdminControl::RedoShape()
 {
 	select_shape->FreeVertex();
-	for (CVertex* vertex = before_shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+	for (CVertex* vertex = before_select_shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
 		select_shape->AppendVertex(vertex->GetX(), vertex->GetY());
 	}
 	if (before_select_vertex != NULL) {
@@ -886,12 +862,122 @@ void CAdminControl::RedoShape()
 	}
 }
 
+//select_vertexの削除
+void CAdminControl::DeleteSelectVertex()
+{
+	CVertex* tem_vertex = NULL;
+	if (select_shape != NULL) {
+		if (select_shape->CountVertex() >= 5) {
+			if (select_vertex != NULL) {
+				CVertex* vertex = select_vertex;
+				if (CheckSelectVertex() == true) {
+					select_shape->SetVertexHead(select_shape->GetVertexHead()->GetNext());
+					for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+						if (p->GetNext() == select_shape->GetFirstVertex()) {
+							delete select_shape->GetFirstVertex();
+							p->SetNext(NULL);
+							select_shape->AppendVertex(p->GetX(), p->GetY());
+							break;
+						}
+					}
+					
+				}
+				else {
+					for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+						if (p->GetNext() == select_vertex) {
+							p->SetNext(select_vertex->GetNext());
+							break;
+						}
+					}
+				}
+				sub_mode = NULL;
+				select_vertex = NULL;
+				delete vertex;
+			}
+		}
+	}
+
+	if (CheckShape() == false) {
+		RedoShape();
+	}
+}
+
+//頂点追加
+void CAdminControl::AddVertex(double x, double y)
+{
+	CVertex* tmp_vertex = NULL;
+	CVertex* tmp_vertex_head = NULL;
+	CVertex* vertex = NULL;
+	if (select_shape != NULL) {
+		if (select_vertex != NULL) {
+			tmp_vertex_head = select_shape->GetVertexHead();
+			vertex = CheckClickVertexLine(x, y, select_shape);
+			if (select_vertex == vertex) {
+				for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+					if (p == select_vertex) {
+						select_shape->AppendVertex(x, y);
+						tmp_vertex = select_vertex->GetNext();
+						select_vertex->SetNext(select_shape->GetVertexHead());
+						select_shape->GetVertexHead()->SetNext(tmp_vertex);
+						select_shape->SetVertexHead(tmp_vertex_head);
+
+						sub_mode = NULL;
+						select_shape = NULL;
+						select_vertex = NULL;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
 bool CAdminControl::CheckSelectVertex()
 {
-	if (select_vertex==select_shape->GetVertexHead()) {
+	if (select_vertex == select_shape->GetVertexHead()) {
 		return true;
 	}
 	return false;
+}
+
+CVertex* CAdminControl::CheckClickVertexLine(double x, double y, CShape* shape)
+{
+	double pb_x = 0.0;
+	double pb_y = 0.0;
+	double ab_x = 0.0;
+	double ab_y = 0.0;
+	double s = 0.0;
+
+	double pa_x = 0.0;
+	double pa_y = 0.0;
+	double bunsi = 0.0;
+	double hantei = 0.0;
+
+	CVertex* vertexA = shape->GetVertexHead();
+	while (vertexA->GetNext() != NULL) {
+		CVertex* vertexB = vertexA->GetNext();
+
+		pb_x = CalcVector(x, vertexB->GetX());
+		pb_y = CalcVector(y, vertexB->GetY());
+		ab_x = CalcVector(vertexA->GetX(), vertexB->GetX());
+		ab_y = CalcVector(vertexA->GetY(), vertexB->GetY());
+		s = CalcNaiseki(pb_x, pb_y, ab_x, ab_y) / CalcNaiseki(ab_x, ab_y, ab_x, ab_y);
+
+		if (0 <= s && s < 1.05) {
+			//最短距離の計算
+			pa_x = CalcVector(x, vertexA->GetX());
+			pa_y = CalcVector(y, vertexA->GetY());
+			bunsi = CalcAbsoluteValue(pa_x * ab_y - pa_y * ab_x);
+
+			hantei = bunsi / sqrt(pow(ab_x, 2) + pow(ab_y, 2));
+			if (hantei < 0.01) {
+				return vertexA;
+				break;
+			}
+		}
+		vertexA = vertexA->GetNext();
+	}
+	return NULL;
 }
 
 void CAdminControl::FreeShape()
