@@ -15,7 +15,7 @@ public:
 	//図形を作る
 	void CreateShape(double x,double y);
 	//sub_modeの設定
-	void SelectEdit(double x,double y);
+	void SelectSubMode(double x,double y);
 	//形状判定
 	bool CheckShape();
 
@@ -55,25 +55,41 @@ public:
 	//LButtonFlag
 	void SetLButtonFlag(bool x);
 	bool GetLButtonFlag();
+	//RButtonFlag
+	void SetRButtonFlag(bool x);
+	bool GetRButtonFlag();
+	//MouseWheelFlag
+
 
 	void LButtonDownSwitch(double x,double y);
 	void LButtonUpSwitch(double x, double y);
 	void MouseMoveSwitch(double x, double y);
-	void RButtonSwitch(double x, double y);
+	void LButtonDblClkSwitch(double x, double y);
+	void RButtonDownSwitch(double x, double y);
+	void RButtonUpSwitch(double x, double y);
 
 	//Create_modeへの切り替え
 	void ChangeModeCreate();
 	//Edit_modeへの切り替え
 	void ChangeModeEdit();
+	//
+	void ChangeModeShapeMove();
 
 	//shapeの保存
 	void SaveBeforeShape();
+	//before_shapeに戻す
 	void RedoShape();
 
+	//select_vertexの削除
 	void DeleteSelectVertex();
+	//頂点追加
 	void AddVertex(double x, double y);
+	//図形移動
+	void MoveShape(double x,double y);
 
+	//select_vertexがvertex_headか確認する
 	bool CheckSelectVertex();
+
 	CVertex* CheckClickVertexLine(double x, double y, CShape* shape);
 
 	void FreeShape();
@@ -82,11 +98,13 @@ private:
 	CShape* shape_head;
 	bool AxisFlag;
 	bool LButtonFlag;
+	bool RButtonFlag;
+	bool MouseWheelFlag;
 	bool MoveErrorFlag;
 	CVertex* select_vertex;
 	CVertex* before_select_vertex;
 	CShape* select_shape;
-	CShape* before_select_shape;
+	CShape* before_shape;
 	int mode;
 	int sub_mode;
 	

@@ -13,13 +13,15 @@
 #define ID_32777                        32777
 #define ID_SHAPE_MODE                   32778
 #define ID_CREATE_MODE                  32779
+#define ID_SHAPEMOVE_MODE               32781
+#define ID_BUTTON32782                  32782
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        310
-#define _APS_NEXT_COMMAND_VALUE         32781
+#define _APS_NEXT_COMMAND_VALUE         32783
 #define _APS_NEXT_CONTROL_VALUE         1000
 #define _APS_NEXT_SYMED_VALUE           310
 #endif
