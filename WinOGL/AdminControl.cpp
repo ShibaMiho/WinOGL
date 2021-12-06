@@ -5,7 +5,6 @@
 #define _USE_MATH_DEFINES
 #define ID_CREATE_MODE 1
 #define ID_EDIT_MODE 2
-#define ID_SHAPEMOVE_MODE 3
 
 #define POINT_SELECT 1
 #define SHAPE_SELECT 2
@@ -21,7 +20,6 @@ CAdminControl::CAdminControl()
 	LButtonFlag = false;
 	RButtonFlag = false;
 	MoveErrorFlag = false;
-	MouseWheelFlag = NULL;
 	select_vertex = NULL;
 	before_select_vertex = NULL;
 	select_shape = NULL;
@@ -788,9 +786,6 @@ void CAdminControl::LButtonDownSwitch(double x, double y)
 	else if (mode == ID_EDIT_MODE) {
 		SelectSubMode(x, y);
 	}
-	else if (mode == ID_SHAPEMOVE_MODE) {
-		SelectSubMode(x, y);
-	}
 }
 
 void CAdminControl::LButtonUpSwitch(double x, double y)
@@ -853,6 +848,9 @@ void CAdminControl::LButtonDblClkSwitch(double x, double y)
 		if (sub_mode == POINT_SELECT) {
 			//’¸“_íœ
 			DeleteSelectVertex();
+			if (CheckShape() == false) {
+				RedoShape();
+			}
 		}
 		if (sub_mode == LINE_SELECT) {
 			//’¸“_’Ç‰Á
@@ -863,12 +861,24 @@ void CAdminControl::LButtonDblClkSwitch(double x, double y)
 
 void CAdminControl::RButtonDownSwitch(double x, double y)
 {
-
 }
 
 void CAdminControl::RButtonUpSwitch(double x, double y)
 {
-	
+}
+
+void CAdminControl::MouseWheelSwitch(short zDelta)
+{
+	if (mode == ID_EDIT_MODE) {
+		if (sub_mode == SHAPE_SELECT) {
+			//}Œ`Šg‘åEk¬
+			EXShape(zDelta);
+			if (CheckShape() == false) {
+				RedoShape();
+			}
+			MoveErrorFlag = false;
+		}
+	}
 }
 
 //Create_mode‚Ö‚ÌØ‚è‘Ö‚¦
@@ -886,11 +896,6 @@ void CAdminControl::ChangeModeCreate()
 void CAdminControl::ChangeModeEdit()
 {
 	mode = ID_EDIT_MODE;
-}
-
-void CAdminControl::ChangeModeShapeMove()
-{
-	mode = ID_SHAPEMOVE_MODE;
 }
 
 //shape‚Ì•Û‘¶
@@ -927,7 +932,6 @@ void CAdminControl::RedoShape()
 //’¸“_íœ(select_vertex‚Ìíœ)
 void CAdminControl::DeleteSelectVertex()
 {
-	CVertex* tem_vertex = NULL;
 	if (select_shape != NULL) {
 		if (select_shape->CountVertex() >= 5) {
 			if (select_vertex != NULL) {
@@ -957,10 +961,6 @@ void CAdminControl::DeleteSelectVertex()
 				delete vertex;
 			}
 		}
-	}
-
-	if (CheckShape() == false) {
-		RedoShape();
 	}
 }
 
@@ -1015,8 +1015,8 @@ void CAdminControl::MoveShape(double x, double y)
 			sum_x = p->GetX() + sum_x;
 			sum_y = p->GetY() + sum_y;
 		}
-		center_x = sum_x / (count_vertex);
-		center_y = sum_y / (count_vertex);
+		center_x = sum_x / count_vertex;
+		center_y = sum_y / count_vertex;
 		move_x = x - center_x;
 		move_y = y - center_y;
 		for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
@@ -1025,6 +1025,38 @@ void CAdminControl::MoveShape(double x, double y)
 		}
 	}
 }
+
+//}Œ`Šg‘åEk¬
+void CAdminControl::EXShape(short zDelta)
+{
+	double sum_x = 0.0;
+	double sum_y = 0.0;
+	double kiten_x = 0.0;
+	double kiten_y = 0.0;
+	int count_vertex = 0.0;
+	if (select_shape != NULL) {
+		count_vertex = select_shape->CountVertex() - 1;
+		for (CVertex* p = select_shape->GetVertexHead(); p != select_shape->GetFirstVertex(); p = p->GetNext()) {
+			sum_x = p->GetX() + sum_x;
+			sum_y = p->GetY() + sum_y;
+		}
+		kiten_x = sum_x / count_vertex;
+		kiten_y = sum_y / count_vertex;
+		if (zDelta == 120) {
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				p->SetX(1.2 * (p->GetX() - kiten_x) + kiten_x);
+				p->SetY(1.2 * (p->GetY() - kiten_y) + kiten_y);
+			}
+		}
+		else if (zDelta == -120) {
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				p->SetX(0.8 * (p->GetX() - kiten_x) + kiten_x);
+				p->SetY(0.8 * (p->GetY() - kiten_y) + kiten_y);
+			}
+		}
+	}
+}
+
 
 //select_vertex‚ªvertex_head‚©Šm”F‚·‚é
 bool CAdminControl::CheckSelectVertex()

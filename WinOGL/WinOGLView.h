@@ -60,7 +60,9 @@ public:
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnShapemoveMode();
-	afx_msg void OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt);
+//	afx_msg void OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt);
+//	afx_msg void OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 };
 
 #ifndef _DEBUG  // WinOGLView.cpp のデバッグ バージョン

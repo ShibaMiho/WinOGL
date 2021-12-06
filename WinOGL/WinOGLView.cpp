@@ -36,8 +36,7 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_WM_RBUTTONDOWN()
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_RBUTTONUP()
-	ON_COMMAND(ID_SHAPEMOVE_MODE, &CWinOGLView::OnShapemoveMode)
-	ON_WM_MOUSEHWHEEL()
+	ON_WM_MOUSEWHEEL()
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -235,22 +234,6 @@ void CWinOGLView::OnLButtonDblClk(UINT nFlags, CPoint point)
 	CView::OnLButtonDblClk(nFlags, point);
 }
 
-
-void CWinOGLView::OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt)
-{
-	if (zDelta > 0) {
-
-	}
-	else if (zDelta < 0)
-	{
-
-	}
-
-	RedrawWindow();
-	CView::OnMouseHWheel(nFlags, zDelta, pt);
-}
-
-
 void CWinOGLView::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	AC.SetRButtonFlag(true);
@@ -314,6 +297,15 @@ void CWinOGLView::OnRButtonUp(UINT nFlags, CPoint point)
 
 	RedrawWindow();
 	CView::OnRButtonUp(nFlags, point);
+}
+
+BOOL CWinOGLView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
+{
+	AC.SaveBeforeShape();
+	AC.MouseWheelSwitch(zDelta);
+
+	RedrawWindow();
+	return CView::OnMouseWheel(nFlags, zDelta, pt);
 }
 
 int CWinOGLView::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -405,8 +397,3 @@ void CWinOGLView::OnCreateMode()
 	RedrawWindow();
 }
 
-void CWinOGLView::OnShapemoveMode()
-{
-	AC.ChangeModeShapeMove();
-	RedrawWindow();
-}

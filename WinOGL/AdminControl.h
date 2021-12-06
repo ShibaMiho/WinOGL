@@ -58,22 +58,19 @@ public:
 	//RButtonFlag
 	void SetRButtonFlag(bool x);
 	bool GetRButtonFlag();
-	//MouseWheelFlag
-
-
+	
 	void LButtonDownSwitch(double x,double y);
 	void LButtonUpSwitch(double x, double y);
 	void MouseMoveSwitch(double x, double y);
 	void LButtonDblClkSwitch(double x, double y);
 	void RButtonDownSwitch(double x, double y);
 	void RButtonUpSwitch(double x, double y);
+	void MouseWheelSwitch(short zDelta);
 
 	//Create_mode‚Ö‚ÌØ‚è‘Ö‚¦
 	void ChangeModeCreate();
 	//Edit_mode‚Ö‚ÌØ‚è‘Ö‚¦
 	void ChangeModeEdit();
-	//
-	void ChangeModeShapeMove();
 
 	//shape‚Ì•Û‘¶
 	void SaveBeforeShape();
@@ -86,6 +83,8 @@ public:
 	void AddVertex(double x, double y);
 	//}Œ`ˆÚ“®
 	void MoveShape(double x,double y);
+	//}Œ`Šg‘åEk¬
+	void EXShape(short zDelta);
 
 	//select_vertex‚ªvertex_head‚©Šm”F‚·‚é
 	bool CheckSelectVertex();
@@ -99,7 +98,6 @@ private:
 	bool AxisFlag;
 	bool LButtonFlag;
 	bool RButtonFlag;
-	bool MouseWheelFlag;
 	bool MoveErrorFlag;
 	CVertex* select_vertex;
 	CVertex* before_select_vertex;
