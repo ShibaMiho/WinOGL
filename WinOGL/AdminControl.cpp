@@ -17,13 +17,18 @@ CAdminControl::CAdminControl()
 {
 	shape_head = new CShape();
 	AxisFlag = false;
+	CreateModeFlag = true;
+	EditModeFlag = false;
 	LButtonFlag = false;
 	RButtonFlag = false;
 	MoveErrorFlag = false;
+	KitenFlag = false;
 	select_vertex = NULL;
 	before_select_vertex = NULL;
 	select_shape = NULL;
 	before_shape = NULL;
+	kiten_x = NULL;
+	kiten_y = NULL;
 	mode = ID_CREATE_MODE;
 	sub_mode = NULL;
 }
@@ -55,26 +60,25 @@ void CAdminControl::Draw()
 	}
 
 	if (mode == ID_EDIT_MODE) {
-
+		//’¸“_‘I‘ğ
 		if (sub_mode == POINT_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
 			glPointSize(9);
 
-			glBegin(GL_POINTS);		//’¸“_•`‰æ
+			glBegin(GL_POINTS);
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
 			glEnd();
 
-			if (MoveErrorFlag == true) {
-				glColor3f(1.0, 0.0, 0.0);	//Ô
+			if (MoveErrorFlag == true) {	//ƒGƒ‰[
+				glColor3f(1.0, 0.0, 0.0);
 				glPointSize(9);
 
-				glBegin(GL_POINTS);		//’¸“_•`‰æ
+				glBegin(GL_POINTS);
 				glVertex2f(select_vertex->GetX(), select_vertex->GetY());
 				glEnd();
-
 			}
 		}
-
+		//}Œ`‘I‘ğ
 		if (sub_mode == SHAPE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
 			glPointSize(9);
@@ -90,8 +94,8 @@ void CAdminControl::Draw()
 			}
 			glEnd();
 
-			if (MoveErrorFlag == true) {
-				glColor3f(1.0, 0.0, 0.0);	//Ô
+			if (MoveErrorFlag == true) {	//ƒGƒ‰[
+				glColor3f(1.0, 0.0, 0.0);
 				glPointSize(9);
 
 				glBegin(GL_POINTS);
@@ -105,8 +109,16 @@ void CAdminControl::Draw()
 				}
 				glEnd();
 			}
-		}
+			if (KitenFlag == true) {	//Šî“_‚Ì•\¦
+				glColor3f(0.0, 1.0, 0.0);
+				glPointSize(9);
 
+				glBegin(GL_POINTS);
+				glVertex2f(kiten_x, kiten_y);
+				glEnd();
+			}
+		}
+		//—Åü‘I‘ğ
 		if (sub_mode == LINE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
 			glPointSize(9);
@@ -116,11 +128,10 @@ void CAdminControl::Draw()
 			glVertex2f(select_vertex->GetNext()->GetX(), select_vertex->GetNext()->GetY());
 			glEnd();
 		}
-
 	}
 	
 	//AxisFlag‚ªtrue‚Ì‚Æ‚«À•W²‚ğ•`‰æ‚·‚é
-	if (AxisFlag) {
+	if (AxisFlag ==true) {
 		DrawAxis();
 	}
 	
@@ -758,6 +769,11 @@ void CAdminControl::ChangeAxisFlag()
 	}
 }
 
+bool CAdminControl::GetAxisFlag()
+{
+	return AxisFlag;
+}
+
 void CAdminControl::SetLButtonFlag(bool x)
 {
 	LButtonFlag = x;
@@ -861,6 +877,18 @@ void CAdminControl::LButtonDblClkSwitch(double x, double y)
 
 void CAdminControl::RButtonDownSwitch(double x, double y)
 {
+	if (mode == ID_EDIT_MODE) {
+		if (sub_mode == SHAPE_SELECT) {
+			if (KitenFlag == false) {
+				KitenFlag = true;
+				SetKiten(x, y);
+			}
+			else if (KitenFlag == true) {
+				KitenFlag = false;
+				SetKiten(NULL, NULL);
+			}
+		}
+	}
 }
 
 void CAdminControl::RButtonUpSwitch(double x, double y)
@@ -871,12 +899,24 @@ void CAdminControl::MouseWheelSwitch(short zDelta)
 {
 	if (mode == ID_EDIT_MODE) {
 		if (sub_mode == SHAPE_SELECT) {
-			//}Œ`Šg‘åEk¬
-			EXShape(zDelta);
-			if (CheckShape() == false) {
-				RedoShape();
+			//Šî“_‚ª‚È‚¢ê‡
+			if (KitenFlag == false) {
+				//}Œ`Šg‘åEk¬
+				EXShape(zDelta);
+				if (CheckShape() == false) {
+					RedoShape();
+				}
+				MoveErrorFlag = false;
 			}
-			MoveErrorFlag = false;
+			//Šî“_‚ª‚ ‚éê‡
+			if (KitenFlag == true) {
+				//}Œ`‰ñ“]
+				RotateShape(kiten_x, kiten_y, zDelta);
+				if (CheckShape() == false) {
+					RedoShape();
+				}
+				MoveErrorFlag = false;
+			}
 		}
 	}
 }
@@ -889,22 +929,39 @@ void CAdminControl::ChangeModeCreate()
 	select_vertex = NULL;
 	select_shape = NULL;
 	before_select_vertex = NULL;
-	before_shape = NULL;
+	KitenFlag = false;
+	SetKiten(NULL, NULL);
+
+	CreateModeFlag = true;
+	EditModeFlag = false;
+}
+
+bool CAdminControl::GetCreateModeFlag()
+{
+	return CreateModeFlag;
 }
 
 //Edit_mode‚Ö‚ÌØ‚è‘Ö‚¦
 void CAdminControl::ChangeModeEdit()
 {
 	mode = ID_EDIT_MODE;
+
+	CreateModeFlag = false;
+	EditModeFlag = true;
+}
+
+bool CAdminControl::GetEditModeFlag()
+{
+	return EditModeFlag;
 }
 
 //shape‚Ì•Û‘¶
 void CAdminControl::SaveBeforeShape()
 {
-	if (before_shape != NULL) {
-		delete before_shape;
-	}
 	if (select_shape != NULL) {
+		if (before_shape != NULL) {
+			delete before_shape;
+		}
 		before_shape = new CShape();
 		for (CVertex* vertex = select_shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
 			before_shape->AppendVertex(vertex->GetX(), vertex->GetY());
@@ -1001,13 +1058,13 @@ void CAdminControl::AddVertex(double x, double y)
 //}Œ`ˆÚ“®
 void CAdminControl::MoveShape(double x, double y)
 {
+	int count_vertex = 0;
 	double sum_x = 0.0;
 	double sum_y = 0.0;
 	double center_x = 0.0;
 	double center_y = 0.0;
 	double move_x = 0.0;
 	double move_y = 0.0;
-	int count_vertex = 0.0;
 
 	if (select_shape != NULL) {
 		count_vertex = select_shape->CountVertex() - 1;
@@ -1042,12 +1099,14 @@ void CAdminControl::EXShape(short zDelta)
 		}
 		kiten_x = sum_x / count_vertex;
 		kiten_y = sum_y / count_vertex;
+		//Šg‘å
 		if (zDelta == 120) {
 			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
 				p->SetX(1.2 * (p->GetX() - kiten_x) + kiten_x);
 				p->SetY(1.2 * (p->GetY() - kiten_y) + kiten_y);
 			}
 		}
+		//k¬
 		else if (zDelta == -120) {
 			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
 				p->SetX(0.8 * (p->GetX() - kiten_x) + kiten_x);
@@ -1055,6 +1114,49 @@ void CAdminControl::EXShape(short zDelta)
 			}
 		}
 	}
+}
+
+//}Œ`‰ñ“]
+void CAdminControl::RotateShape(double kiten_x, double kiten_y, short zDelta)
+{
+	double p_x = 0.0;
+	double p_y = 0.0;
+
+	if (select_shape != NULL) {
+		if (zDelta == 120) {
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				p_x = p->GetX();
+				p_y = p->GetY();
+				p->SetX((p_x - kiten_x) * cos(0.2) - (p_y - kiten_y) * sin(0.2) + kiten_x);
+				p->SetY((p_x - kiten_x) * sin(0.2) + (p_y - kiten_y) * cos(0.2) + kiten_y);
+			}
+		}
+		//
+		else if (zDelta == -120) {
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				p_x = p->GetX();
+				p_y = p->GetY();
+				p->SetX((p_x - kiten_x) * cos(-0.2) - (p_y - kiten_y) * sin(-0.2) + kiten_x);
+				p->SetY((p_x - kiten_x) * sin(-0.2) + (p_y - kiten_y) * cos(-0.2) + kiten_y);
+			}
+		}
+	}
+}
+
+void CAdminControl::SetKiten(double x, double y)
+{
+	kiten_x = x;
+	kiten_y = y;
+}
+
+double CAdminControl::GetKiten_x()
+{
+	return kiten_x;
+}
+
+double CAdminControl::GetKiten_y()
+{
+	return kiten_y;
 }
 
 

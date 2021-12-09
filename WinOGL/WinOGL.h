@@ -27,6 +27,7 @@ public:
 // 実装
 	afx_msg void OnAppAbout();
 	DECLARE_MESSAGE_MAP()
+	afx_msg void OnUpdateXyz(CCmdUI* pCmdUI);
 };
 
 extern CWinOGLApp theApp;

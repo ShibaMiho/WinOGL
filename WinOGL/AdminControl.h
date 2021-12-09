@@ -52,6 +52,8 @@ public:
 	void DrawAxis();
 	//AxisFlag‚ÌØ‚è‘Ö‚¦
 	void ChangeAxisFlag();
+	bool GetAxisFlag();
+
 	//LButtonFlag
 	void SetLButtonFlag(bool x);
 	bool GetLButtonFlag();
@@ -69,8 +71,10 @@ public:
 
 	//Create_mode‚Ö‚ÌØ‚è‘Ö‚¦
 	void ChangeModeCreate();
+	bool GetCreateModeFlag();
 	//Edit_mode‚Ö‚ÌØ‚è‘Ö‚¦
 	void ChangeModeEdit();
+	bool GetEditModeFlag();
 
 	//shape‚Ì•Û‘¶
 	void SaveBeforeShape();
@@ -85,6 +89,13 @@ public:
 	void MoveShape(double x,double y);
 	//}Œ`Šg‘åEk¬
 	void EXShape(short zDelta);
+	//}Œ`‰ñ“]
+	void RotateShape(double kiten_x, double kiten_y, short zDelta);
+	//Šî“_
+	void SetKiten(double x, double y);
+	double GetKiten_x();
+	double GetKiten_y();
+
 
 	//select_vertex‚ªvertex_head‚©Šm”F‚·‚é
 	bool CheckSelectVertex();
@@ -96,13 +107,18 @@ public:
 private:
 	CShape* shape_head;
 	bool AxisFlag;
+	bool CreateModeFlag;
+	bool EditModeFlag;
 	bool LButtonFlag;
 	bool RButtonFlag;
 	bool MoveErrorFlag;
+	bool KitenFlag;
 	CVertex* select_vertex;
 	CVertex* before_select_vertex;
 	CShape* select_shape;
 	CShape* before_shape;
+	double kiten_x;
+	double kiten_y;
 	int mode;
 	int sub_mode;
 	

@@ -37,6 +37,9 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_WM_LBUTTONDBLCLK()
 	ON_WM_RBUTTONUP()
 	ON_WM_MOUSEWHEEL()
+	ON_UPDATE_COMMAND_UI(ID_XYZ, &CWinOGLView::OnUpdateXyz)
+	ON_UPDATE_COMMAND_UI(ID_CREATE_MODE, &CWinOGLView::OnUpdateCreateMode)
+	ON_UPDATE_COMMAND_UI(ID_EDIT_MODE, &CWinOGLView::OnUpdateEditMode)
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -261,7 +264,6 @@ void CWinOGLView::OnRButtonDown(UINT nFlags, CPoint point)
 	}
 
 	AC.RButtonDownSwitch(X, Y);
-	AC.SaveBeforeShape();
 
 	RedrawWindow();
 	CView::OnRButtonDown(nFlags, point);
@@ -385,10 +387,14 @@ void CWinOGLView::OnXyz()
 	RedrawWindow();
 }
 
-void CWinOGLView::OnEditMode()
+void CWinOGLView::OnUpdateXyz(CCmdUI* pCmdUI)
 {
-	AC.ChangeModeEdit();
-	RedrawWindow();
+	if (AC.GetAxisFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
 }
 
 void CWinOGLView::OnCreateMode()
@@ -397,3 +403,28 @@ void CWinOGLView::OnCreateMode()
 	RedrawWindow();
 }
 
+void CWinOGLView::OnUpdateCreateMode(CCmdUI* pCmdUI)
+{
+	if (AC.GetCreateModeFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnEditMode()
+{
+	AC.ChangeModeEdit();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateEditMode(CCmdUI* pCmdUI)
+{
+	if (AC.GetEditModeFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}

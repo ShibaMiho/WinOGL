@@ -63,6 +63,9 @@ public:
 //	afx_msg void OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt);
 //	afx_msg void OnMouseHWheel(UINT nFlags, short zDelta, CPoint pt);
 	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+	afx_msg void OnUpdateXyz(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateCreateMode(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateEditMode(CCmdUI* pCmdUI);
 };
 
 #ifndef _DEBUG  // WinOGLView.cpp のデバッグ バージョン
