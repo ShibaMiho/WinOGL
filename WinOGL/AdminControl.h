@@ -25,12 +25,14 @@ public:
 	//©ŒÈŒğ·”»’è‚ğ‚·‚é
 	bool CalcKousa(double x1,double y1,double x2,double y2);
 	bool CalcKousa(CShape* shape);
+	bool CalcCopyKousa(CShape* shape);
 	//‘¼Œğ·”»’è‚ğ‚·‚é
 	bool CalcTakousa(double x1,double y1);
 	bool CalcTakousa(CShape* shape);
 	//“àŠO”»’è‚ğ‚·‚é
 	bool CalcNaigai(double x,double y);
 	CShape* CalcNaigai2(double x,double y);
+	bool CalcCopyNaigai(double x, double y, CShape* shape, int z);
 	//“à•ï”»’è‚ğ‚·‚é
 	bool CalcNaihou(double x,double y);
 	bool CalcNaihou(CShape* shape);
@@ -53,6 +55,12 @@ public:
 	//AxisFlag‚ÌØ‚è‘Ö‚¦
 	void ChangeAxisFlag();
 	bool GetAxisFlag();
+
+	//–Ê‚Ì•\¦
+	void DrawPolygon(CShape* shape);
+	//PolygonFlag‚ÌØ‚è‘Ö‚¦
+	void ChangePolygonFlag();
+	bool GetPolygonFlag();
 
 	//LButtonFlag
 	void SetLButtonFlag(bool x);
@@ -81,6 +89,8 @@ public:
 	//before_shape‚É–ß‚·
 	void RedoShape();
 
+	void CopyShape(CShape* shape);
+
 	//select_vertex‚Ìíœ
 	void DeleteSelectVertex();
 	//’¸“_’Ç‰Á
@@ -107,6 +117,7 @@ public:
 private:
 	CShape* shape_head;
 	bool AxisFlag;
+	bool PolygonFlag;
 	bool CreateModeFlag;
 	bool EditModeFlag;
 	bool LButtonFlag;
@@ -117,6 +128,7 @@ private:
 	CVertex* before_select_vertex;
 	CShape* select_shape;
 	CShape* before_shape;
+	CShape* copy_shape;
 	double kiten_x;
 	double kiten_y;
 	int mode;

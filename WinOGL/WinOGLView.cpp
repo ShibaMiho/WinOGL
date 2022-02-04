@@ -31,6 +31,7 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_COMMAND(ID_XYZ, &CWinOGLView::OnXyz)
 	ON_COMMAND(ID_EDIT_MODE, &CWinOGLView::OnEditMode)
 	ON_COMMAND(ID_CREATE_MODE, &CWinOGLView::OnCreateMode)
+	ON_COMMAND(ID_SURFACE_MODE, &CWinOGLView::OnSurfaceMode)
 	ON_WM_LBUTTONUP()
 	ON_WM_MOUSEMOVE()
 	ON_WM_RBUTTONDOWN()
@@ -40,6 +41,7 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_UPDATE_COMMAND_UI(ID_XYZ, &CWinOGLView::OnUpdateXyz)
 	ON_UPDATE_COMMAND_UI(ID_CREATE_MODE, &CWinOGLView::OnUpdateCreateMode)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_MODE, &CWinOGLView::OnUpdateEditMode)
+	ON_UPDATE_COMMAND_UI(ID_SURFACE_MODE, &CWinOGLView::OnUpdateSurfaceMode)
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -74,7 +76,7 @@ void CWinOGLView::OnDraw(CDC* pDC)
 	wglMakeCurrent(pDC->m_hDC, m_hRC);
 
 	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT /*  | GL_DEPTH_BUFFER_BIT */);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	AC.Draw();
 
@@ -422,6 +424,22 @@ void CWinOGLView::OnEditMode()
 void CWinOGLView::OnUpdateEditMode(CCmdUI* pCmdUI)
 {
 	if (AC.GetEditModeFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnSurfaceMode()
+{
+	AC.ChangePolygonFlag();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateSurfaceMode(CCmdUI* pCmdUI)
+{
+	if (AC.GetPolygonFlag() == true) {
 		pCmdUI->SetCheck(true);
 	}
 	else {

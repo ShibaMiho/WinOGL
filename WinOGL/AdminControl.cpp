@@ -17,6 +17,7 @@ CAdminControl::CAdminControl()
 {
 	shape_head = new CShape();
 	AxisFlag = false;
+	PolygonFlag = false;
 	CreateModeFlag = true;
 	EditModeFlag = false;
 	LButtonFlag = false;
@@ -27,6 +28,7 @@ CAdminControl::CAdminControl()
 	before_select_vertex = NULL;
 	select_shape = NULL;
 	before_shape = NULL;
+	copy_shape = NULL;
 	kiten_x = NULL;
 	kiten_y = NULL;
 	mode = ID_CREATE_MODE;
@@ -37,13 +39,15 @@ CAdminControl::~CAdminControl()
 {
 	FreeShape();
 	delete before_shape;
+	delete copy_shape;
 }
 
 
 void CAdminControl::Draw()
 {
 	glColor3f(1.0, 1.0, 1.0);
-	glPointSize(6);
+	glPointSize(10);
+	glLineWidth(4);
 
 	for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
 		glBegin(GL_POINTS);		//頂点描画
@@ -63,7 +67,7 @@ void CAdminControl::Draw()
 		//頂点選択
 		if (sub_mode == POINT_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(9);
+			glPointSize(12);
 
 			glBegin(GL_POINTS);
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
@@ -71,7 +75,7 @@ void CAdminControl::Draw()
 
 			if (MoveErrorFlag == true) {	//エラー
 				glColor3f(1.0, 0.0, 0.0);
-				glPointSize(9);
+				glPointSize(12);
 
 				glBegin(GL_POINTS);
 				glVertex2f(select_vertex->GetX(), select_vertex->GetY());
@@ -81,7 +85,8 @@ void CAdminControl::Draw()
 		//図形選択
 		if (sub_mode == SHAPE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(9);
+			glPointSize(12);
+			glLineWidth(5);
 
 			glBegin(GL_POINTS);
 			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
@@ -96,7 +101,8 @@ void CAdminControl::Draw()
 
 			if (MoveErrorFlag == true) {	//エラー
 				glColor3f(1.0, 0.0, 0.0);
-				glPointSize(9);
+				glPointSize(12);
+				glLineWidth(5);
 
 				glBegin(GL_POINTS);
 				for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
@@ -111,7 +117,7 @@ void CAdminControl::Draw()
 			}
 			if (KitenFlag == true) {	//基点の表示
 				glColor3f(0.0, 1.0, 0.0);
-				glPointSize(9);
+				glPointSize(13);
 
 				glBegin(GL_POINTS);
 				glVertex2f(kiten_x, kiten_y);
@@ -121,7 +127,8 @@ void CAdminControl::Draw()
 		//稜線選択
 		if (sub_mode == LINE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(9);
+			glPointSize(12);
+			glLineWidth(5);
 
 			glBegin(GL_LINE_STRIP);
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
@@ -133,6 +140,13 @@ void CAdminControl::Draw()
 	//AxisFlagがtrueのとき座標軸を描画する
 	if (AxisFlag ==true) {
 		DrawAxis();
+	}
+
+	if (PolygonFlag == true) {
+		for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
+			CopyShape(s);
+			DrawPolygon(s);
+		}
 	}
 	
 }
@@ -393,6 +407,60 @@ bool CAdminControl::CalcKousa(CShape* shape)
 	return false;
 }
 
+bool CAdminControl::CalcCopyKousa(CShape* shape)
+{
+	CVertex* vertex = shape->GetVertexHead();
+	while (vertex->GetNext() != NULL) {
+		double x1 = vertex->GetX();
+		double y1 = vertex->GetY();
+
+		vertex = vertex->GetNext();
+		double x2 = vertex->GetX();
+		double y2 = vertex->GetY();
+
+		double a_x = CalcVector(x1, x2);
+		double a_y = CalcVector(y1, y2);
+
+		CVertex* p = shape_head->GetVertexHead();
+		while (p->GetNext() != NULL) {
+
+			double x3 = p->GetX();
+			double y3 = p->GetY();
+
+			p = p->GetNext();
+			double x4 = p->GetX();
+			double y4 = p->GetY();
+
+			double a1_x = CalcVector(x4, x2);
+			double a1_y = CalcVector(y4, y2);
+
+			double a2_x = CalcVector(x3, x2);
+			double a2_y = CalcVector(y3, y2);
+
+			double b_x = CalcVector(x3, x4);
+			double b_y = CalcVector(y3, y4);
+
+			double b1_x = CalcVector(x2, x4);
+			double b1_y = CalcVector(y2, y4);
+
+			double b2_x = CalcVector(x1, x4);
+			double b2_y = CalcVector(y1, y4);
+
+			double ca1 = CalcGaiseki(a_x, a_y, a1_x, a1_y);
+			double ca2 = CalcGaiseki(a_x, a_y, a2_x, a2_y);
+			double cb1 = CalcGaiseki(b_x, b_y, b1_x, b1_y);
+			double cb2 = CalcGaiseki(b_x, b_y, b2_x, b2_y);
+
+			if (ca1 * ca2 < 0 && cb1 * cb2 < 0) {
+				//他交差する時
+				return true;
+			}
+		}
+		
+	}
+	return false;
+}
+
 //他交差判定をする
 bool CAdminControl::CalcTakousa(double x1,double y1)
 {
@@ -496,6 +564,7 @@ bool CAdminControl::CalcTakousa(CShape* shape)
 				}
 			}
 		}
+		
 	}
 	return false;
 }
@@ -541,7 +610,6 @@ bool CAdminControl::CalcNaigai(double x, double y)
 			return true;
 		}
 	}
-
 	return false;
 }
 
@@ -587,6 +655,89 @@ CShape* CAdminControl::CalcNaigai2(double x, double y)
 	}
 
 	return NULL;
+}
+
+bool CAdminControl::CalcCopyNaigai(double x, double y, CShape* shape, int z)
+{
+	if (z == 1) {
+		double sum = 0.0;
+		double kakudo = 0.0;
+		CVertex* p = shape_head->GetVertexHead();
+		while (p->GetNext() != NULL) {
+			double x1 = p->GetX();
+			double y1 = p->GetY();
+
+			p = p->GetNext();
+			double x2 = p->GetX();
+			double y2 = p->GetY();
+
+			double a_x = CalcVector(x1, x);
+			double a_y = CalcVector(y1, y);
+
+			double b_x = CalcVector(x2, x);
+			double b_y = CalcVector(y2, y);
+
+			double nai = CalcNaiseki(a_x, a_y, b_x, b_y);
+			double gai = CalcGaiseki(a_x, a_y, b_x, b_y);
+
+			kakudo = atan2(gai, nai);
+			sum = kakudo + sum;
+		}
+
+		if (sum < 0) {
+			sum = -1 * sum;
+		}
+
+		double hantei = sum - 2 * M_PI;
+		if (hantei < 0) {
+			hantei = -1 * hantei;
+		}
+		if (hantei <= 0.001) {
+			//内外する時
+			return true;
+		}
+	}
+	//重心が内外するか
+	if (z == 2) {
+		double sum = 0.0;
+		double kakudo = 0.0;
+		CVertex* p = shape->GetVertexHead();
+		while (p->GetNext() != NULL) {
+			double x1 = p->GetX();
+			double y1 = p->GetY();
+
+			p = p->GetNext();
+			double x2 = p->GetX();
+			double y2 = p->GetY();
+
+			double a_x = CalcVector(x1, x);
+			double a_y = CalcVector(y1, y);
+
+			double b_x = CalcVector(x2, x);
+			double b_y = CalcVector(y2, y);
+
+			double nai = CalcNaiseki(a_x, a_y, b_x, b_y);
+			double gai = CalcGaiseki(a_x, a_y, b_x, b_y);
+
+			kakudo = atan2(gai, nai);
+			sum = kakudo + sum;
+		}
+
+		if (sum < 0) {
+			sum = -1 * sum;
+		}
+
+		double hantei = sum - 2 * M_PI;
+		if (hantei < 0) {
+			hantei = -1 * hantei;
+		}
+		if (hantei <= 0.005) {
+			//内外する時
+			return true;
+		}
+	}
+
+	return false;
 }
 
 //内包判定をする
@@ -688,6 +839,7 @@ bool CAdminControl::CalcNaihou(CShape* shape)
 			}
 		}
 	}
+
 	return false;
 }
 
@@ -739,6 +891,7 @@ double CAdminControl::CalcAbsoluteValue(double x)
 void CAdminControl::DrawAxis(void)
 {
 	glBegin(GL_LINES);
+	glLineWidth(2);
 
 	//x軸
 	glColor3f(1.0, 0.0, 0.0);
@@ -772,6 +925,114 @@ void CAdminControl::ChangeAxisFlag()
 bool CAdminControl::GetAxisFlag()
 {
 	return AxisFlag;
+}
+
+//面の描画
+void CAdminControl::DrawPolygon(CShape* shape)
+{
+	CVertex* now_vertex = NULL;
+	CVertex* two_vertex = NULL;
+	CVertex* three_vertex = NULL;
+	
+	double center_x = 0.0;
+	double center_y = 0.0;
+	bool hantei_naigai = false;
+	bool hantei_zyusin = false;
+	bool hantei_kousa = false;
+
+	glColor3f(0.5, 0.5, 0.5);
+	if (copy_shape != NULL) {
+
+		if (copy_shape->CountVertex() > 4) {
+			now_vertex = copy_shape->GetVertexHead();
+			two_vertex = now_vertex->GetNext();
+			three_vertex = two_vertex->GetNext();
+
+			while (now_vertex != copy_shape->GetFirstVertex()) {
+				while (two_vertex != NULL) {
+					while (three_vertex != NULL) {
+						shape_head->AppendVertex(now_vertex->GetX(), now_vertex->GetY());
+						shape_head->AppendVertex(two_vertex->GetX(), two_vertex->GetY());
+						shape_head->AppendVertex(three_vertex->GetX(), three_vertex->GetY());
+						shape_head->AppendVertex(now_vertex->GetX(), now_vertex->GetY());
+
+						//内外判定
+						for (CVertex* vertex = shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+							if (CalcCopyNaigai(vertex->GetX(), vertex->GetY(), shape, 1) == true) {
+								hantei_naigai = true;
+								break;
+							}
+						}
+						//重心判定
+						center_x = (now_vertex->GetX() + two_vertex->GetX() + three_vertex->GetX()) / 3;
+						center_y = (now_vertex->GetY() + two_vertex->GetY() + three_vertex->GetY()) / 3;
+						if (CalcCopyNaigai(center_x, center_y, shape, 2) == false) {
+							hantei_zyusin = true;
+						}
+						//交差判定
+						if (CalcCopyKousa(shape) == true) {
+							hantei_kousa = true;
+						}
+
+						if (hantei_naigai == false && hantei_zyusin == false && hantei_kousa == false) {
+							glBegin(GL_TRIANGLES);
+							for (CVertex* v = shape_head->GetVertexHead(); v != NULL; v = v->GetNext()) {
+								glVertex2f(v->GetX(), v->GetY());
+							}
+							glEnd();
+						}
+
+						shape_head->FreeVertex();
+						hantei_naigai = false;
+						hantei_zyusin = false;
+						hantei_kousa = false;
+						three_vertex = three_vertex->GetNext();
+					}
+					two_vertex = two_vertex->GetNext();
+					three_vertex = copy_shape->GetVertexHead();
+				}
+				now_vertex = now_vertex->GetNext();
+				two_vertex = now_vertex->GetNext();
+				three_vertex = copy_shape->GetVertexHead();
+			}
+		}
+
+		if (copy_shape->CountVertex() == 4) {
+			glBegin(GL_TRIANGLES);
+			for (CVertex* v = copy_shape->GetVertexHead(); v != NULL; v = v->GetNext()) {
+				glVertex2f(v->GetX(), v->GetY());
+			}
+			glEnd();
+		}
+
+		if (shape_head->CountVertex() != 0) {
+			shape_head->FreeVertex();
+		}
+	}
+}
+
+//PolygonFlagの切り替え
+void CAdminControl::ChangePolygonFlag()
+{
+	if (shape_head->CountVertex() == 0) {
+		if (PolygonFlag == true) {
+			PolygonFlag = false;
+			if (EditModeFlag == false) {
+				CreateModeFlag = true;
+			}
+		}
+		else if (PolygonFlag == false) {
+			PolygonFlag = true;
+			if (CreateModeFlag == true) {
+				CreateModeFlag = false;
+			}
+		}
+	}
+}
+
+bool CAdminControl::GetPolygonFlag()
+{
+	return PolygonFlag;
 }
 
 void CAdminControl::SetLButtonFlag(bool x)
@@ -924,16 +1185,18 @@ void CAdminControl::MouseWheelSwitch(short zDelta)
 //Create_modeへの切り替え
 void CAdminControl::ChangeModeCreate()
 {
-	mode = ID_CREATE_MODE;
-	sub_mode = NULL;
-	select_vertex = NULL;
-	select_shape = NULL;
-	before_select_vertex = NULL;
-	KitenFlag = false;
-	SetKiten(NULL, NULL);
+	if (PolygonFlag == false) {
+		mode = ID_CREATE_MODE;
+		sub_mode = NULL;
+		select_vertex = NULL;
+		select_shape = NULL;
+		before_select_vertex = NULL;
+		KitenFlag = false;
+		SetKiten(NULL, NULL);
 
-	CreateModeFlag = true;
-	EditModeFlag = false;
+		CreateModeFlag = true;
+		EditModeFlag = false;
+	}
 }
 
 bool CAdminControl::GetCreateModeFlag()
@@ -944,10 +1207,12 @@ bool CAdminControl::GetCreateModeFlag()
 //Edit_modeへの切り替え
 void CAdminControl::ChangeModeEdit()
 {
-	mode = ID_EDIT_MODE;
+	if (shape_head->CountVertex() == 0) {
+		mode = ID_EDIT_MODE;
 
-	CreateModeFlag = false;
-	EditModeFlag = true;
+		CreateModeFlag = false;
+		EditModeFlag = true;
+	}
 }
 
 bool CAdminControl::GetEditModeFlag()
@@ -983,6 +1248,17 @@ void CAdminControl::RedoShape()
 	}
 	if (before_select_vertex != NULL) {
 		select_vertex = before_select_vertex;
+	}
+}
+
+void CAdminControl::CopyShape(CShape* shape)
+{
+	if (copy_shape != NULL) {
+		delete copy_shape;
+	}
+	copy_shape = new CShape();
+	for (CVertex* v = shape->GetVertexHead(); v != NULL; v = v->GetNext()) {
+		copy_shape->AppendVertex(v->GetX(), v->GetY());
 	}
 }
 
@@ -1131,7 +1407,7 @@ void CAdminControl::RotateShape(double kiten_x, double kiten_y, short zDelta)
 				p->SetY((p_x - kiten_x) * sin(0.2) + (p_y - kiten_y) * cos(0.2) + kiten_y);
 			}
 		}
-		//
+		
 		else if (zDelta == -120) {
 			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
 				p_x = p->GetX();
