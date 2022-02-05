@@ -69,6 +69,8 @@ public:
 //	afx_msg void OnSurface();
 	afx_msg void OnSurfaceMode();
 	afx_msg void OnUpdateSurfaceMode(CCmdUI* pCmdUI);
+	afx_msg void OnDeleteMode();
+	afx_msg void OnUpdateDeleteMode(CCmdUI* pCmdUI);
 };
 
 #ifndef _DEBUG  // WinOGLView.cpp のデバッグ バージョン

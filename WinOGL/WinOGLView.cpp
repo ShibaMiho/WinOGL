@@ -42,6 +42,8 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_UPDATE_COMMAND_UI(ID_CREATE_MODE, &CWinOGLView::OnUpdateCreateMode)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_MODE, &CWinOGLView::OnUpdateEditMode)
 	ON_UPDATE_COMMAND_UI(ID_SURFACE_MODE, &CWinOGLView::OnUpdateSurfaceMode)
+	ON_COMMAND(ID_DELETE_MODE, &CWinOGLView::OnDeleteMode)
+	ON_UPDATE_COMMAND_UI(ID_DELETE_MODE, &CWinOGLView::OnUpdateDeleteMode)
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -440,6 +442,23 @@ void CWinOGLView::OnSurfaceMode()
 void CWinOGLView::OnUpdateSurfaceMode(CCmdUI* pCmdUI)
 {
 	if (AC.GetPolygonFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnDeleteMode()
+{
+	AC.ChangeModeDelete();
+	RedrawWindow();
+}
+
+
+void CWinOGLView::OnUpdateDeleteMode(CCmdUI* pCmdUI)
+{
+	if (AC.GetDeleteModeFlag() == true) {
 		pCmdUI->SetCheck(true);
 	}
 	else {

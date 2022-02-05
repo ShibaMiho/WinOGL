@@ -5,6 +5,7 @@
 #define _USE_MATH_DEFINES
 #define ID_CREATE_MODE 1
 #define ID_EDIT_MODE 2
+#define ID_DELETE_MODE 3
 
 #define POINT_SELECT 1
 #define SHAPE_SELECT 2
@@ -16,14 +17,18 @@
 CAdminControl::CAdminControl()
 {
 	shape_head = new CShape();
+
 	AxisFlag = false;
 	PolygonFlag = false;
 	CreateModeFlag = true;
 	EditModeFlag = false;
+	DeleteModeFlag = false;
+
 	LButtonFlag = false;
 	RButtonFlag = false;
 	MoveErrorFlag = false;
 	KitenFlag = false;
+
 	select_vertex = NULL;
 	before_select_vertex = NULL;
 	select_shape = NULL;
@@ -46,7 +51,7 @@ CAdminControl::~CAdminControl()
 void CAdminControl::Draw()
 {
 	glColor3f(1.0, 1.0, 1.0);
-	glPointSize(10);
+	glPointSize(12);
 	glLineWidth(4);
 
 	for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
@@ -67,7 +72,7 @@ void CAdminControl::Draw()
 		//頂点選択
 		if (sub_mode == POINT_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(12);
+			glPointSize(13);
 
 			glBegin(GL_POINTS);
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
@@ -75,7 +80,7 @@ void CAdminControl::Draw()
 
 			if (MoveErrorFlag == true) {	//エラー
 				glColor3f(1.0, 0.0, 0.0);
-				glPointSize(12);
+				glPointSize(13);
 
 				glBegin(GL_POINTS);
 				glVertex2f(select_vertex->GetX(), select_vertex->GetY());
@@ -85,7 +90,7 @@ void CAdminControl::Draw()
 		//図形選択
 		if (sub_mode == SHAPE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(12);
+			glPointSize(13);
 			glLineWidth(5);
 
 			glBegin(GL_POINTS);
@@ -101,7 +106,7 @@ void CAdminControl::Draw()
 
 			if (MoveErrorFlag == true) {	//エラー
 				glColor3f(1.0, 0.0, 0.0);
-				glPointSize(12);
+				glPointSize(13);
 				glLineWidth(5);
 
 				glBegin(GL_POINTS);
@@ -117,7 +122,7 @@ void CAdminControl::Draw()
 			}
 			if (KitenFlag == true) {	//基点の表示
 				glColor3f(0.0, 1.0, 0.0);
-				glPointSize(13);
+				glPointSize(14);
 
 				glBegin(GL_POINTS);
 				glVertex2f(kiten_x, kiten_y);
@@ -127,12 +132,31 @@ void CAdminControl::Draw()
 		//稜線選択
 		if (sub_mode == LINE_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
-			glPointSize(12);
+			glPointSize(13);
 			glLineWidth(5);
 
 			glBegin(GL_LINE_STRIP);
 			glVertex2f(select_vertex->GetX(), select_vertex->GetY());
 			glVertex2f(select_vertex->GetNext()->GetX(), select_vertex->GetNext()->GetY());
+			glEnd();
+		}
+	}
+
+	if (mode == ID_DELETE_MODE) {
+		if (select_shape != NULL) {
+			glColor3f(0.0, 1.0, 0.0);
+			glPointSize(13);
+			glLineWidth(5);
+
+			glBegin(GL_POINTS);
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				glVertex2f(p->GetX(), p->GetY());
+			}
+			glEnd();
+			glBegin(GL_LINE_STRIP);
+			for (CVertex* p = select_shape->GetVertexHead(); p != NULL; p = p->GetNext()) {
+				glVertex2f(p->GetX(), p->GetY());
+			}
 			glEnd();
 		}
 	}
@@ -142,6 +166,7 @@ void CAdminControl::Draw()
 		DrawAxis();
 	}
 
+	//PolygonFlagがtrueのとき面を表示する
 	if (PolygonFlag == true) {
 		for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
 			CopyShape(s);
@@ -224,6 +249,7 @@ void CAdminControl::SelectSubMode(double x, double y)
 	double sa_y = 0.0;
 
 	CVertex* vertex1 = NULL;
+	CShape* shape_naigai = NULL;
 
 	for (CShape* shape = shape_head->GetNext(); shape!= NULL; shape = shape->GetNext()) {
 		//頂点の選択判定
@@ -254,16 +280,17 @@ void CAdminControl::SelectSubMode(double x, double y)
 			}
 		}
 
-		//図形の選択
-		if (sub_mode == NULL) {
-			CShape* shape_naigai = CalcNaigai2(x, y);
-			if (shape == shape_naigai) {
-				sub_mode = SHAPE_SELECT;
-				select_shape = shape;
-			}
-		}
-		
 	}
+
+	//図形の選択
+	if (sub_mode == NULL) {
+		shape_naigai = CalcNaigai2(x, y);
+		if (shape_naigai != NULL) {
+			sub_mode = SHAPE_SELECT;
+			select_shape = shape_naigai;
+		}
+	}
+
 }
 
 //形状判定
@@ -615,10 +642,10 @@ bool CAdminControl::CalcNaigai(double x, double y)
 
 CShape* CAdminControl::CalcNaigai2(double x, double y)
 {
-	for (CShape* s = shape_head->GetNext(); s != NULL; s = s->GetNext()) {
+	for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
 		double sum = 0.0;
 		double kakudo = 0.0;
-		CVertex* p = s->GetVertexHead();
+		CVertex* p = shape->GetVertexHead();
 		while (p->GetNext() != NULL) {
 			double x1 = p->GetX();
 			double y1 = p->GetY();
@@ -650,7 +677,7 @@ CShape* CAdminControl::CalcNaigai2(double x, double y)
 		}
 		if (hantei <= 0.001) {
 			//内外する時
-			return s;
+			return shape;
 		}
 	}
 
@@ -1017,14 +1044,13 @@ void CAdminControl::ChangePolygonFlag()
 	if (shape_head->CountVertex() == 0) {
 		if (PolygonFlag == true) {
 			PolygonFlag = false;
-			if (EditModeFlag == false) {
-				CreateModeFlag = true;
-			}
 		}
 		else if (PolygonFlag == false) {
 			PolygonFlag = true;
 			if (CreateModeFlag == true) {
 				CreateModeFlag = false;
+				EditModeFlag = true;
+				mode = ID_EDIT_MODE;
 			}
 		}
 	}
@@ -1062,6 +1088,9 @@ void CAdminControl::LButtonDownSwitch(double x, double y)
 	}
 	else if (mode == ID_EDIT_MODE) {
 		SelectSubMode(x, y);
+	}
+	else if (mode == ID_DELETE_MODE) {
+		DeleteShape(x, y);
 	}
 }
 
@@ -1187,6 +1216,7 @@ void CAdminControl::ChangeModeCreate()
 {
 	if (PolygonFlag == false) {
 		mode = ID_CREATE_MODE;
+
 		sub_mode = NULL;
 		select_vertex = NULL;
 		select_shape = NULL;
@@ -1196,6 +1226,7 @@ void CAdminControl::ChangeModeCreate()
 
 		CreateModeFlag = true;
 		EditModeFlag = false;
+		DeleteModeFlag = false;
 	}
 }
 
@@ -1212,12 +1243,37 @@ void CAdminControl::ChangeModeEdit()
 
 		CreateModeFlag = false;
 		EditModeFlag = true;
+		DeleteModeFlag = false;
 	}
 }
 
 bool CAdminControl::GetEditModeFlag()
 {
 	return EditModeFlag;
+}
+
+//Delete_modeへの切り替え
+void CAdminControl::ChangeModeDelete()
+{	
+	if (shape_head->CountVertex() == 0) {
+		mode = ID_DELETE_MODE;
+
+		sub_mode = NULL;
+		select_vertex = NULL;
+		select_shape = NULL;
+		before_select_vertex = NULL;
+		KitenFlag = false;
+		SetKiten(NULL, NULL);
+
+		CreateModeFlag = false;
+		EditModeFlag = false;
+		DeleteModeFlag = true;
+	}
+}
+
+bool CAdminControl::GetDeleteModeFlag()
+{
+	return DeleteModeFlag;
 }
 
 //shapeの保存
@@ -1435,6 +1491,53 @@ double CAdminControl::GetKiten_y()
 	return kiten_y;
 }
 
+////選択された形状を削除する
+void CAdminControl::DeleteShape(double x, double y)
+{
+	int count_shape = 0;
+	CShape* tmp_shape = NULL;
+	bool hantei = false;
+
+	if (select_shape == NULL) {
+		//図形の選択
+		tmp_shape = CalcNaigai2(x, y);
+		if (tmp_shape != NULL) {
+			select_shape = tmp_shape;
+		}
+	}
+	else if (select_shape != NULL) {
+		//図形の削除
+		tmp_shape = CalcNaigai2(x, y);
+		if (select_shape == tmp_shape) {
+			hantei = true;
+		}
+		if (hantei == true) {
+			for (CShape* shape = shape_head; shape != NULL; shape = shape->GetNext()) {
+				if (shape->GetNext() == select_shape) {
+					if (select_shape->GetNext() != NULL) {
+						shape->SetNext(select_shape->GetNext());
+					}
+					else if (select_shape->GetNext() == NULL) {
+						shape->SetNext(NULL);
+					}
+					delete select_shape;
+					select_shape = NULL;
+					break;
+				}
+			}
+			count_shape = CountShape();
+			if (count_shape == 0) {
+				if (PolygonFlag == true) {
+					PolygonFlag = false;
+				}
+				ChangeModeCreate();
+			}
+		}
+		hantei = false;
+	}
+	
+}
+
 
 //select_vertexがvertex_headか確認する
 bool CAdminControl::CheckSelectVertex()
@@ -1483,6 +1586,16 @@ CVertex* CAdminControl::CheckClickVertexLine(double x, double y, CShape* shape)
 		vertexA = vertexA->GetNext();
 	}
 	return NULL;
+}
+
+//今の形状の個数を返す(shape_headは数えない)
+int CAdminControl::CountShape()
+{
+	int count = 0;
+	for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
+		count++;
+	}
+	return count;
 }
 
 void CAdminControl::FreeShape()

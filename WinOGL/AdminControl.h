@@ -83,12 +83,15 @@ public:
 	//Edit_modeへの切り替え
 	void ChangeModeEdit();
 	bool GetEditModeFlag();
+	//Delete_modeへの切り替え
+	void ChangeModeDelete();
+	bool GetDeleteModeFlag();
 
 	//shapeの保存
 	void SaveBeforeShape();
 	//before_shapeに戻す
 	void RedoShape();
-
+	//形状保存
 	void CopyShape(CShape* shape);
 
 	//select_vertexの削除
@@ -105,25 +108,33 @@ public:
 	void SetKiten(double x, double y);
 	double GetKiten_x();
 	double GetKiten_y();
-
+	//選択された形状を削除する
+	void DeleteShape(double x,double y);
 
 	//select_vertexがvertex_headか確認する
 	bool CheckSelectVertex();
 
 	CVertex* CheckClickVertexLine(double x, double y, CShape* shape);
 
+	//今の形状の個数を返す
+	int CountShape();
+
 	void FreeShape();
 
 private:
 	CShape* shape_head;
+
 	bool AxisFlag;
 	bool PolygonFlag;
 	bool CreateModeFlag;
 	bool EditModeFlag;
+	bool DeleteModeFlag;
+
 	bool LButtonFlag;
 	bool RButtonFlag;
 	bool MoveErrorFlag;
 	bool KitenFlag;
+
 	CVertex* select_vertex;
 	CVertex* before_select_vertex;
 	CShape* select_shape;
