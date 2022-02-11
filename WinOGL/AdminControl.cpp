@@ -6,10 +6,17 @@
 #define ID_CREATE_MODE 1
 #define ID_EDIT_MODE 2
 #define ID_DELETE_MODE 3
+#define ID_VIEW_MODE 4
 
 #define POINT_SELECT 1
 #define SHAPE_SELECT 2
 #define LINE_SELECT 3
+
+#define VIEW_IDOU 1
+#define VIEW_KAITEN 2
+#define VIEW_KAKUDAI 3
+#define VIEW_SYUKUSYOU 4
+#define VIEW_3D 5
 
 #include<math.h>
 
@@ -20,12 +27,15 @@ CAdminControl::CAdminControl()
 
 	AxisFlag = false;
 	PolygonFlag = false;
+	View3DFlag = false;
+	ViewLightFlag = false;
 	CreateModeFlag = true;
 	EditModeFlag = false;
 	DeleteModeFlag = false;
+	ViewModeFlag = false;
 
-	LButtonFlag = false;
-	RButtonFlag = false;
+	LButtonDownFlag = false;
+	RButtonDownFlag = false;
 	MoveErrorFlag = false;
 	KitenFlag = false;
 
@@ -38,6 +48,11 @@ CAdminControl::CAdminControl()
 	kiten_y = NULL;
 	mode = ID_CREATE_MODE;
 	sub_mode = NULL;
+	view_mode = NULL;
+	view_hantei = NULL;
+	view_idou = NULL;
+	depth_hantei = NULL;
+	depth_idou = NULL;
 }
 
 CAdminControl::~CAdminControl()
@@ -50,25 +65,71 @@ CAdminControl::~CAdminControl()
 
 void CAdminControl::Draw()
 {
-	glColor3f(1.0, 1.0, 1.0);
-	glPointSize(12);
-	glLineWidth(4);
+	if (mode != ID_VIEW_MODE) {
+		glLoadIdentity();
 
-	for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
-		glBegin(GL_POINTS);		//í∏ì_ï`âÊ
-		for (CVertex* p = s->GetVertexHead(); p != NULL; p = p->GetNext()) {
-			glVertex2f(p->GetX(), p->GetY());
+		//AxisFlagÇ™trueÇÃÇ∆Ç´ç¿ïWé≤Çï`âÊÇ∑ÇÈ
+		if (AxisFlag == true) {
+			DrawAxis();
 		}
-		glEnd();
+		//PolygonFlagÇ™trueÇÃÇ∆Ç´ñ Çï\é¶Ç∑ÇÈ
+		if (PolygonFlag == true) {
+			for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
+				CopyShape(shape);
+				DrawPolygon(shape);
+			}
+		}
+	}
+	else if (mode == ID_VIEW_MODE) {
+		ViewShape();
+		//View3DFlagÇ™trueÇÃÇ∆Ç´3éüå≥å`èÛÇï\é¶Ç∑ÇÈ
+		if (View3DFlag == true) {
+			ViewDepth();
+			if (PolygonFlag == true) {
+				for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
+					CopyShape(shape);
+					DrawPolygon(shape);
+					Draw3DPolygon(shape);
+				}
+			}
+			glColor3f(1.0, 1.0, 1.0);
+			for (CShape* shape = shape_head; shape != NULL; shape = shape->GetNext()) {
+				glBegin(GL_POINTS);		//í∏ì_ï`âÊ
+				for (CVertex* vertex = shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+					glVertex3f(vertex->GetX(), vertex->GetY(), depth_idou);
+				}
+				glEnd();
 
-		glBegin(GL_LINE_STRIP);		//ê¸ï`âÊ
-		for (CVertex* p = s->GetVertexHead(); p != NULL; p = p->GetNext()) {
-			glVertex2f(p->GetX(), p->GetY());
+				glBegin(GL_LINE_STRIP);		//ê¸ï`âÊ
+				for (CVertex* vertex = shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+					glVertex3f(vertex->GetX(), vertex->GetY(), depth_idou);
+				}
+				glEnd();
+
+				for (CVertex* vertex = shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+					glBegin(GL_LINE_STRIP);
+					glVertex3f(vertex->GetX(), vertex->GetY(), 0);
+					glVertex3f(vertex->GetX(), vertex->GetY(), depth_idou);
+					glEnd();
+				}
+			}
 		}
-		glEnd();
+		//PolygonFlagÇ™trueÇÃÇ∆Ç´ñ Çï\é¶Ç∑ÇÈ
+		else if (PolygonFlag == true) {
+			for (CShape* shape = shape_head->GetNext(); shape != NULL; shape = shape->GetNext()) {
+				CopyShape(shape);
+				DrawPolygon(shape);
+			}
+		}
+		DrawShape();
+	}
+
+	if (mode == ID_CREATE_MODE) {
+		DrawShape();
 	}
 
 	if (mode == ID_EDIT_MODE) {
+		DrawShape();
 		//í∏ì_ëIë
 		if (sub_mode == POINT_SELECT) {
 			glColor3f(0.0, 1.0, 0.0);
@@ -143,6 +204,7 @@ void CAdminControl::Draw()
 	}
 
 	if (mode == ID_DELETE_MODE) {
+		DrawShape();
 		if (select_shape != NULL) {
 			glColor3f(0.0, 1.0, 0.0);
 			glPointSize(13);
@@ -160,20 +222,11 @@ void CAdminControl::Draw()
 			glEnd();
 		}
 	}
-	
+
 	//AxisFlagÇ™trueÇÃÇ∆Ç´ç¿ïWé≤Çï`âÊÇ∑ÇÈ
 	if (AxisFlag ==true) {
 		DrawAxis();
 	}
-
-	//PolygonFlagÇ™trueÇÃÇ∆Ç´ñ Çï\é¶Ç∑ÇÈ
-	if (PolygonFlag == true) {
-		for (CShape* s = shape_head; s != NULL; s = s->GetNext()) {
-			CopyShape(s);
-			DrawPolygon(s);
-		}
-	}
-	
 }
 
 void CAdminControl::CreateShape(double x, double y)
@@ -914,11 +967,34 @@ double CAdminControl::CalcAbsoluteValue(double x)
 	return x;
 }
 
+
+//å`èÛï`âÊ
+void CAdminControl::DrawShape()
+{
+	glColor3f(1.0, 1.0, 1.0);
+	glPointSize(12);
+	glLineWidth(4);
+
+	for (CShape* shape = shape_head; shape != NULL; shape = shape->GetNext()) {
+		glBegin(GL_POINTS);		//í∏ì_ï`âÊ
+		for (CVertex* vertex = shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+			glVertex2f(vertex->GetX(), vertex->GetY());
+		}
+		glEnd();
+
+		glBegin(GL_LINE_STRIP);		//ê¸ï`âÊ
+		for (CVertex* vertex = shape->GetVertexHead(); vertex != NULL; vertex = vertex->GetNext()) {
+			glVertex2f(vertex->GetX(), vertex->GetY());
+		}
+		glEnd();
+	}
+}
+
 //xyzé≤Çï\é¶Ç∑ÇÈ
 void CAdminControl::DrawAxis(void)
 {
 	glBegin(GL_LINES);
-	glLineWidth(2);
+	glLineWidth(1);
 
 	//xé≤
 	glColor3f(1.0, 0.0, 0.0);
@@ -941,11 +1017,13 @@ void CAdminControl::DrawAxis(void)
 //AxisFlagÇÃêÿÇËë÷Ç¶
 void CAdminControl::ChangeAxisFlag()
 {
-	if (AxisFlag == true) {
-		AxisFlag = false;
-	}
-	else if(AxisFlag==false){
-		AxisFlag = true;
+	if (mode != ID_VIEW_MODE) {
+		if (AxisFlag == true) {
+			AxisFlag = false;
+		}
+		else if (AxisFlag == false) {
+			AxisFlag = true;
+		}
 	}
 }
 
@@ -1007,6 +1085,14 @@ void CAdminControl::DrawPolygon(CShape* shape)
 								glVertex2f(v->GetX(), v->GetY());
 							}
 							glEnd();
+
+							if (View3DFlag == true) {
+								glBegin(GL_TRIANGLES);
+								for (CVertex* v = shape_head->GetVertexHead(); v != NULL; v = v->GetNext()) {
+									glVertex3f(v->GetX(), v->GetY(),depth_idou);
+								}
+								glEnd();
+							}
 						}
 
 						shape_head->FreeVertex();
@@ -1030,6 +1116,15 @@ void CAdminControl::DrawPolygon(CShape* shape)
 				glVertex2f(v->GetX(), v->GetY());
 			}
 			glEnd();
+
+			if (View3DFlag == true) {
+				glBegin(GL_TRIANGLES);
+				for (CVertex* v = copy_shape->GetVertexHead(); v != NULL; v = v->GetNext()) {
+					glVertex3f(v->GetX(), v->GetY(), depth_idou);
+				}
+				glEnd();
+			}
+
 		}
 
 		if (shape_head->CountVertex() != 0) {
@@ -1038,12 +1133,40 @@ void CAdminControl::DrawPolygon(CShape* shape)
 	}
 }
 
+void CAdminControl::Draw3DPolygon(CShape* shape)
+{
+	if (View3DFlag == true) {
+		CVertex* one_vertex = shape->GetVertexHead();
+		CVertex* two_vertex = one_vertex->GetNext();
+
+		glColor3f(0.5, 0.5, 0.5);
+		while (two_vertex != NULL) {
+			glBegin(GL_TRIANGLES);
+			glVertex3f(one_vertex->GetX(), one_vertex->GetY(), 0.0);
+			glVertex3f(one_vertex->GetX(), one_vertex->GetY(), depth_idou);
+			glVertex3f(two_vertex->GetX(), two_vertex->GetY(), depth_idou);
+			glEnd();
+
+			glBegin(GL_TRIANGLES);
+			glVertex3f(two_vertex->GetX(), two_vertex->GetY(), 0.0);
+			glVertex3f(two_vertex->GetX(), two_vertex->GetY(), depth_idou);
+			glVertex3f(one_vertex->GetX(), one_vertex->GetY(), 0.0);
+			glEnd();
+			one_vertex = one_vertex->GetNext();
+			two_vertex = two_vertex->GetNext();
+		}
+	}
+}
+
 //PolygonFlagÇÃêÿÇËë÷Ç¶
 void CAdminControl::ChangePolygonFlag()
 {
-	if (shape_head->CountVertex() == 0) {
+	if (shape_head->CountVertex() == 0 && CountShape() != 0) {
 		if (PolygonFlag == true) {
 			PolygonFlag = false;
+			if (ViewLightFlag == true) {
+				ViewLightFlag = false;
+			}
 		}
 		else if (PolygonFlag == false) {
 			PolygonFlag = true;
@@ -1061,25 +1184,65 @@ bool CAdminControl::GetPolygonFlag()
 	return PolygonFlag;
 }
 
-void CAdminControl::SetLButtonFlag(bool x)
+void CAdminControl::ChangeViewLightFlag()
 {
-	LButtonFlag = x;
+	if (mode == ID_VIEW_MODE) {
+		if (PolygonFlag == true) {
+			if (ViewLightFlag == false) {
+				ViewLightFlag = true;
+			}
+			else if (ViewLightFlag == true) {
+				ViewLightFlag = false;
+			}
+		}
+	}
 }
 
-bool CAdminControl::GetLButtonFlag()
+bool CAdminControl::GetViewLightFlag()
 {
-	return LButtonFlag;
+	return ViewLightFlag;
 }
 
-void CAdminControl::SetRButtonFlag(bool x)
+//View3DFlagÇÃêÿÇËë÷Ç¶
+void CAdminControl::ChangeView3DFlag()
 {
-	RButtonFlag = x;
+	if (mode == ID_VIEW_MODE) {
+		if (View3DFlag == true) {
+			View3DFlag = false;
+		}
+		else if (View3DFlag == false) {
+			View3DFlag = true;
+		}
+	}
 }
 
-bool CAdminControl::GetRButtonFlag()
+bool CAdminControl::GetView3DFlag()
 {
-	return RButtonFlag;
+	return View3DFlag;
 }
+
+//LBottonDownFlag
+void CAdminControl::SetLButtonDownFlag(bool x)
+{
+	LButtonDownFlag = x;
+}
+
+bool CAdminControl::GetLButtonDownFlag()
+{
+	return LButtonDownFlag;
+}
+
+//RBottonDownFlag
+void CAdminControl::SetRButtonDownFlag(bool x)
+{
+	RButtonDownFlag = x;
+}
+
+bool CAdminControl::GetRButtonDownFlag()
+{
+	return RButtonDownFlag;
+}
+
 
 void CAdminControl::LButtonDownSwitch(double x, double y)
 {
@@ -1121,6 +1284,7 @@ void CAdminControl::LButtonUpSwitch(double x, double y)
 
 void CAdminControl::MouseMoveSwitch(double x, double y)
 {
+	//Edit_modeÇÃéû
 	if (mode == ID_EDIT_MODE) {
 		if (sub_mode == POINT_SELECT) {
 			//í∏ì_à⁄ìÆ
@@ -1209,6 +1373,54 @@ void CAdminControl::MouseWheelSwitch(short zDelta)
 			}
 		}
 	}
+	if (View3DFlag == true) {
+		//Å™
+		if (zDelta == 120) {
+			depth_hantei = 1;
+		}
+		//Å´
+		else if (zDelta == -120) {
+			depth_hantei = 2;
+		}
+	}
+}
+
+void CAdminControl::KeyDownSwitch(UINT nChar)
+{
+	if (mode == ID_VIEW_MODE) {
+		if (view_mode != NULL) {
+			//xâüÇµÇΩéû
+			if (nChar == 88) {
+				view_hantei = 1;
+			}
+			//yâüÇµÇΩéû
+			else if (nChar == 89) {
+				view_hantei = 2;
+			}
+			//zâüÇµÇΩéû
+			else if (nChar == 90) {
+				view_hantei = 3;
+			}
+			if (view_mode == VIEW_IDOU || view_mode == VIEW_KAITEN) {
+				//Å©
+				if (nChar == 37) {
+					view_idou = 1;
+				}
+				//Å™
+				else if (nChar == 38) {
+					view_idou = 2;
+				}
+				//Å®
+				else if (nChar == 39) {
+					view_idou = 3;
+				}
+				//Å´
+				else if (nChar == 40) {
+					view_idou = 4;
+				}
+			}
+		}
+	}
 }
 
 //Create_modeÇ÷ÇÃêÿÇËë÷Ç¶
@@ -1218,6 +1430,11 @@ void CAdminControl::ChangeModeCreate()
 		mode = ID_CREATE_MODE;
 
 		sub_mode = NULL;
+		view_mode = NULL;
+		view_hantei = NULL;
+		view_idou = NULL;
+		depth_hantei = NULL;
+		depth_idou = NULL;
 		select_vertex = NULL;
 		select_shape = NULL;
 		before_select_vertex = NULL;
@@ -1227,6 +1444,9 @@ void CAdminControl::ChangeModeCreate()
 		CreateModeFlag = true;
 		EditModeFlag = false;
 		DeleteModeFlag = false;
+		ViewModeFlag = false;
+		View3DFlag = false;
+		ViewLightFlag = false;
 	}
 }
 
@@ -1238,12 +1458,21 @@ bool CAdminControl::GetCreateModeFlag()
 //Edit_modeÇ÷ÇÃêÿÇËë÷Ç¶
 void CAdminControl::ChangeModeEdit()
 {
-	if (shape_head->CountVertex() == 0) {
+	if (shape_head->CountVertex() == 0 && CountShape() != 0) {
 		mode = ID_EDIT_MODE;
+
+		view_mode = NULL;
+		view_hantei = NULL;
+		view_idou = NULL;
+		depth_hantei = NULL;
+		depth_idou = NULL;
 
 		CreateModeFlag = false;
 		EditModeFlag = true;
 		DeleteModeFlag = false;
+		ViewModeFlag = false;
+		View3DFlag = false;
+		ViewLightFlag = false;
 	}
 }
 
@@ -1255,8 +1484,41 @@ bool CAdminControl::GetEditModeFlag()
 //Delete_modeÇ÷ÇÃêÿÇËë÷Ç¶
 void CAdminControl::ChangeModeDelete()
 {	
-	if (shape_head->CountVertex() == 0) {
+	if (shape_head->CountVertex() == 0 && CountShape() != 0) {
 		mode = ID_DELETE_MODE;
+
+		sub_mode = NULL;
+		view_mode = NULL;
+		view_hantei = NULL;
+		view_idou = NULL;
+		depth_hantei = NULL;
+		depth_idou = NULL;
+		select_vertex = NULL;
+		select_shape = NULL;
+		before_select_vertex = NULL;
+		KitenFlag = false;
+		SetKiten(NULL, NULL);
+
+		CreateModeFlag = false;
+		EditModeFlag = false;
+		DeleteModeFlag = true;
+		ViewModeFlag = false;
+		View3DFlag = false;
+		ViewLightFlag = false;
+	}
+}
+
+bool CAdminControl::GetDeleteModeFlag()
+{
+	return DeleteModeFlag;
+}
+
+//View_modeÇ÷ÇÃêÿÇËë÷Ç¶
+void CAdminControl::ChangeModeView()
+{
+	if (shape_head->CountVertex() == 0 && CountShape() != 0) {
+		mode = ID_VIEW_MODE;
+		view_mode = VIEW_IDOU;
 
 		sub_mode = NULL;
 		select_vertex = NULL;
@@ -1267,13 +1529,59 @@ void CAdminControl::ChangeModeDelete()
 
 		CreateModeFlag = false;
 		EditModeFlag = false;
-		DeleteModeFlag = true;
+		DeleteModeFlag = false;
+		ViewModeFlag = true;
+
+		if (AxisFlag == false) {
+			AxisFlag = true;
+		}
 	}
 }
 
-bool CAdminControl::GetDeleteModeFlag()
+bool CAdminControl::GetViewModeFlag()
 {
-	return DeleteModeFlag;
+	return ViewModeFlag;
+}
+
+void CAdminControl::ChangeViewModeIdou()
+{
+	view_hantei = NULL;
+	view_idou = NULL;
+	if (mode == ID_VIEW_MODE) {
+		view_mode = VIEW_IDOU;
+	}
+}
+
+void CAdminControl::ChangeViewModeKaiten()
+{
+	view_hantei = NULL;
+	view_idou = NULL;
+	if (mode == ID_VIEW_MODE) {
+		view_mode = VIEW_KAITEN;
+	}
+}
+
+void CAdminControl::ChangeViewModeKakudai()
+{
+	view_hantei = NULL;
+	view_idou = NULL;
+	if (mode == ID_VIEW_MODE) {
+		view_mode = VIEW_KAKUDAI;
+	}
+}
+
+void CAdminControl::ChangeViewModeSyukusyou()
+{
+	view_hantei = NULL;
+	view_idou = NULL;
+	if (mode == ID_VIEW_MODE) {
+		view_mode = VIEW_SYUKUSYOU;
+	}
+}
+
+int CAdminControl::GetViewMode()
+{
+	return view_mode;
 }
 
 //shapeÇÃï€ë∂
@@ -1536,6 +1844,120 @@ void CAdminControl::DeleteShape(double x, double y)
 		hantei = false;
 	}
 	
+}
+
+//éãì_ïœçX
+void CAdminControl::ViewShape()
+{
+	//à⁄ìÆ
+	if (view_mode == VIEW_IDOU) {
+		if (view_hantei == 1) {
+			if (view_idou == 3) {
+				glTranslatef(0.2, 0.0, 0.0);
+			}
+			else if (view_idou == 1) {
+				glTranslatef(-0.2, 0.0, 0.0);
+			}
+		}
+		if (view_hantei == 2) {
+			if (view_idou == 3) {
+				glTranslatef(0.0, 0.2, 0.0);
+			}
+			else if (view_idou == 1) {
+				glTranslatef(0.0, -0.2, 0.0);
+			}
+		}
+		if (view_hantei == 3) {
+			if (view_idou == 3) {
+				glTranslatef(0.0, 0.0, 0.2);
+			}
+			else if (view_idou == 1) {
+				glTranslatef(0.0, 0.0, -0.2);
+			}
+		}
+	}
+	//âÒì]
+	else if (view_mode == VIEW_KAITEN) {
+		if (view_hantei == 1) {
+			if (view_idou == 2) {
+				glRotatef(30.0, 1.0, 0.0, 0.0);
+			}
+			else if (view_idou == 4) {
+				glRotatef(-30.0, 1.0, 0.0, 0.0);
+			}
+			else if (view_idou == 1) {
+				glRotatef(30.0, 0.0, 1.0, 1.0);
+			}
+			else if (view_idou == 3) {
+				glRotatef(-30.0, 0.0, 1.0, 1.0);
+			}
+		}
+		if (view_hantei == 2) {
+			if (view_idou == 2) {
+				glRotatef(30.0, 0.0, 1.0, 0.0);
+			}
+			else if (view_idou == 4) {
+				glRotatef(-30.0, 0.0, 1.0, 0.0);
+			}
+			if (view_idou == 1) {
+				glRotatef(30.0, 1.0, 0.0, 1.0);
+			}
+			else if (view_idou == 3) {
+				glRotatef(-30.0, 1.0, 0.0, 1.0);
+			}
+		}
+		if (view_hantei == 3) {
+			if (view_idou == 2) {
+				glRotatef(30.0, 0.0, 0.0, 1.0);
+			}
+			else if (view_idou == 4) {
+				glRotatef(-30.0, 0.0, 0.0, 1.0);
+			}
+			else if (view_idou == 1) {
+				glRotatef(30.0, 1.0, 1.0, 0.0);
+			}
+			else if (view_idou == 3) {
+				glRotatef(-30.0, 1.0, 1.0, 0.0);
+			}
+		}
+	}
+	//ägëÂ
+	else if (view_mode == VIEW_KAKUDAI) {
+		if (view_hantei == 1) {
+			glScalef(1.5, 1.0, 1.0);
+		}
+		if (view_hantei == 2) {
+			glScalef(1.0, 1.5, 1.0);
+		}
+		if (view_hantei == 3) {
+			glScalef(1.0, 1.0, 1.5);
+		}
+	}
+	//èkè¨
+	else if (view_mode == VIEW_SYUKUSYOU) {
+		if (view_hantei == 1) {
+			glScalef(0.5, 1.0, 1.0);
+		}
+		if (view_hantei == 2) {
+			glScalef(1.0, 0.5, 1.0);
+		}
+		if (view_hantei == 3) {
+			glScalef(1.0, 1.0, 0.5);
+		}
+	}
+	view_idou = NULL;
+}
+
+//âúçsê›íË
+void CAdminControl::ViewDepth()
+{
+	if (depth_hantei == 1) {
+		depth_idou += 0.1;
+	}
+	else if (depth_hantei == 2) {
+		depth_idou -= 0.1;
+	}
+	depth_hantei = NULL;
 }
 
 

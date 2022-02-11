@@ -5,6 +5,7 @@ CShape::CShape()
 {
 	vertex_head = NULL;
 	next = NULL;
+	depth = 0.0;
 }
 
 CShape::~CShape()
@@ -61,6 +62,16 @@ CVertex* CShape::GetFirstVertex()
 		vertex = vertex->GetNext();
 	}
 	return vertex;
+}
+
+void CShape::SetDepth(double new_depth)
+{
+	depth = new_depth;
+}
+
+double CShape::GetDepth()
+{
+	return depth;
 }
 
 void CShape::FreeVertex()

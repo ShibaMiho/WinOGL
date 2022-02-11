@@ -21,7 +21,7 @@ public:
 	void SetY(double new_y);
 	//　頂点のX・Y座標の両方を書き込む
 	void SetXY(double new_x, double new_y);
-	//　頂点のX座標を読み込む込む
+	//　頂点のX座標を読み込む
 	double GetX();
 	//　頂点のY座標を読み込む
 	double GetY();

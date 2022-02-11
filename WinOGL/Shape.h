@@ -7,6 +7,7 @@ class CShape
 private:
 	CVertex* vertex_head;
 	CShape* next;
+	double depth;
 
 public:
 	CShape();
@@ -26,6 +27,10 @@ public:
 
 	//‰‚ß‚Ì’¸“_‚ğ•Ô‚·
 	CVertex* GetFirstVertex();
+
+	//‰œsİ’è
+	void SetDepth(double new_depth);
+	double GetDepth();
 
 	void FreeVertex();
 

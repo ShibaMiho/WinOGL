@@ -44,6 +44,21 @@ BEGIN_MESSAGE_MAP(CWinOGLView, CView)
 	ON_UPDATE_COMMAND_UI(ID_SURFACE_MODE, &CWinOGLView::OnUpdateSurfaceMode)
 	ON_COMMAND(ID_DELETE_MODE, &CWinOGLView::OnDeleteMode)
 	ON_UPDATE_COMMAND_UI(ID_DELETE_MODE, &CWinOGLView::OnUpdateDeleteMode)
+	ON_COMMAND(ID_VIEW_MODE, &CWinOGLView::OnViewMode)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_MODE, &CWinOGLView::OnUpdateViewMode)
+	ON_WM_KEYDOWN()
+	ON_COMMAND(ID_VIEW_MODE_IDOU, &CWinOGLView::OnViewModeIdou)
+	ON_COMMAND(ID_VIEW_MODE_KAITEN, &CWinOGLView::OnViewModeKaiten)
+	ON_COMMAND(ID_VIEW_MODE_KAKUDAI, &CWinOGLView::OnViewModeKakudai)
+	ON_COMMAND(ID_VIEW_MODE_SYUKUSYOU, &CWinOGLView::OnViewModeSyukusyou)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_MODE_IDOU, &CWinOGLView::OnUpdateViewModeIdou)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_MODE_KAITEN, &CWinOGLView::OnUpdateViewModeKaiten)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_MODE_KAKUDAI, &CWinOGLView::OnUpdateViewModeKakudai)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_MODE_SYUKUSYOU, &CWinOGLView::OnUpdateViewModeSyukusyou)
+	ON_COMMAND(ID_3VIEW_MODE, &CWinOGLView::On3viewMode)
+	ON_UPDATE_COMMAND_UI(ID_3VIEW_MODE, &CWinOGLView::OnUpdate3viewMode)
+	ON_COMMAND(ID_VIEW_LIGHT, &CWinOGLView::OnViewLight)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_LIGHT, &CWinOGLView::OnUpdateViewLight)
 END_MESSAGE_MAP()
 
 // CWinOGLView コンストラクション/デストラクション
@@ -116,7 +131,7 @@ CWinOGLDoc* CWinOGLView::GetDocument() const // デバッグ以外のバージ�
 
 void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	AC.SetLButtonFlag(true);
+	AC.SetLButtonDownFlag(true);
 
 	CRect rect;
 	GetClientRect(rect);
@@ -149,7 +164,7 @@ void CWinOGLView::OnLButtonDown(UINT nFlags, CPoint point)
 
 void CWinOGLView::OnLButtonUp(UINT nFlags, CPoint point)
 {
-	AC.SetLButtonFlag(false);
+	AC.SetLButtonDownFlag(false);
 
 	CRect rect;
 	GetClientRect(rect);
@@ -182,7 +197,7 @@ void CWinOGLView::OnLButtonUp(UINT nFlags, CPoint point)
 
 void CWinOGLView::OnMouseMove(UINT nFlags, CPoint point)
 {
-	if (AC.GetLButtonFlag() == true) {
+	if (AC.GetLButtonDownFlag() == true) {
 		CRect rect;
 		GetClientRect(rect);
 		double X;
@@ -243,7 +258,7 @@ void CWinOGLView::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 void CWinOGLView::OnRButtonDown(UINT nFlags, CPoint point)
 {
-	AC.SetRButtonFlag(true);
+	AC.SetRButtonDownFlag(true);
 
 	CRect rect;
 	GetClientRect(rect);
@@ -275,7 +290,7 @@ void CWinOGLView::OnRButtonDown(UINT nFlags, CPoint point)
 
 void CWinOGLView::OnRButtonUp(UINT nFlags, CPoint point)
 {
-	AC.SetRButtonFlag(false);
+	AC.SetRButtonDownFlag(false);
 
 	CRect rect;
 	GetClientRect(rect);
@@ -313,6 +328,14 @@ BOOL CWinOGLView::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	RedrawWindow();
 	return CView::OnMouseWheel(nFlags, zDelta, pt);
 }
+
+void CWinOGLView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	AC.KeyDownSwitch(nChar);
+	RedrawWindow();
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
 
 int CWinOGLView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
@@ -455,10 +478,122 @@ void CWinOGLView::OnDeleteMode()
 	RedrawWindow();
 }
 
-
 void CWinOGLView::OnUpdateDeleteMode(CCmdUI* pCmdUI)
 {
 	if (AC.GetDeleteModeFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+
+void CWinOGLView::OnViewMode()
+{
+	AC.ChangeModeView();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateViewMode(CCmdUI* pCmdUI)
+{
+	if (AC.GetViewModeFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnViewModeIdou()
+{
+	AC.ChangeViewModeIdou();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateViewModeIdou(CCmdUI* pCmdUI)
+{
+	if (AC.GetViewMode() == 1) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnViewModeKaiten()
+{
+	AC.ChangeViewModeKaiten();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateViewModeKaiten(CCmdUI* pCmdUI)
+{
+	if (AC.GetViewMode() == 2) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnViewModeKakudai()
+{
+	AC.ChangeViewModeKakudai();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateViewModeKakudai(CCmdUI* pCmdUI)
+{
+	if (AC.GetViewMode() == 3) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnViewModeSyukusyou()
+{
+	AC.ChangeViewModeSyukusyou();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateViewModeSyukusyou(CCmdUI* pCmdUI)
+{
+	if (AC.GetViewMode() == 4) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::On3viewMode()
+{
+	AC.ChangeView3DFlag();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdate3viewMode(CCmdUI* pCmdUI)
+{
+	if (AC.GetView3DFlag() == true) {
+		pCmdUI->SetCheck(true);
+	}
+	else {
+		pCmdUI->SetCheck(false);
+	}
+}
+
+void CWinOGLView::OnViewLight()
+{
+	AC.ChangeViewLightFlag();
+	RedrawWindow();
+}
+
+void CWinOGLView::OnUpdateViewLight(CCmdUI* pCmdUI)
+{
+	if (AC.GetViewLightFlag() == true) {
 		pCmdUI->SetCheck(true);
 	}
 	else {

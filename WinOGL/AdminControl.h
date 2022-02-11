@@ -46,9 +46,13 @@ public:
 	double CalcNaiseki(double a1, double a2, double b1, double b2);
 	//外積の計算をする
 	double CalcGaiseki(double a1, double a2, double b1, double b2);
-
+	//法線の計算をする
+	double CalcHousen();
 	//絶対値の計算をする
 	double CalcAbsoluteValue(double x);
+
+	//形状描画
+	void DrawShape();
 
 	//xyz軸を表示する
 	void DrawAxis();
@@ -58,16 +62,26 @@ public:
 
 	//面の表示
 	void DrawPolygon(CShape* shape);
+	void Draw3DPolygon(CShape* shape);
 	//PolygonFlagの切り替え
 	void ChangePolygonFlag();
 	bool GetPolygonFlag();
 
-	//LButtonFlag
-	void SetLButtonFlag(bool x);
-	bool GetLButtonFlag();
-	//RButtonFlag
-	void SetRButtonFlag(bool x);
-	bool GetRButtonFlag();
+	//ライティング表示
+	//ViewLightFlagの切り替え
+	void ChangeViewLightFlag();
+	bool GetViewLightFlag();
+
+	//View3DFlagの切り替え
+	void ChangeView3DFlag();
+	bool GetView3DFlag();
+
+	//LButtonDownFlag
+	void SetLButtonDownFlag(bool x);
+	bool GetLButtonDownFlag();
+	//RButtonDownFlag
+	void SetRButtonDownFlag(bool x);
+	bool GetRButtonDownFlag();
 	
 	void LButtonDownSwitch(double x,double y);
 	void LButtonUpSwitch(double x, double y);
@@ -76,6 +90,7 @@ public:
 	void RButtonDownSwitch(double x, double y);
 	void RButtonUpSwitch(double x, double y);
 	void MouseWheelSwitch(short zDelta);
+	void KeyDownSwitch(UINT nChar);
 
 	//Create_modeへの切り替え
 	void ChangeModeCreate();
@@ -86,6 +101,16 @@ public:
 	//Delete_modeへの切り替え
 	void ChangeModeDelete();
 	bool GetDeleteModeFlag();
+	//View_modeへの切り替え
+	void ChangeModeView();
+	bool GetViewModeFlag();
+
+	//視点変更切り替え
+	void ChangeViewModeIdou();
+	void ChangeViewModeKaiten();
+	void ChangeViewModeKakudai();
+	void ChangeViewModeSyukusyou();
+	int GetViewMode();
 
 	//shapeの保存
 	void SaveBeforeShape();
@@ -110,6 +135,12 @@ public:
 	double GetKiten_y();
 	//選択された形状を削除する
 	void DeleteShape(double x,double y);
+	//視点変更
+	void ViewShape();
+	//奥行設定
+	void ViewDepth();
+	//ライティング表示
+	void ViewLight();
 
 	//select_vertexがvertex_headか確認する
 	bool CheckSelectVertex();
@@ -126,12 +157,15 @@ private:
 
 	bool AxisFlag;
 	bool PolygonFlag;
+	bool View3DFlag;
+	bool ViewLightFlag;
 	bool CreateModeFlag;
 	bool EditModeFlag;
 	bool DeleteModeFlag;
+	bool ViewModeFlag;
 
-	bool LButtonFlag;
-	bool RButtonFlag;
+	bool LButtonDownFlag;
+	bool RButtonDownFlag;
 	bool MoveErrorFlag;
 	bool KitenFlag;
 
@@ -144,6 +178,11 @@ private:
 	double kiten_y;
 	int mode;
 	int sub_mode;
+	int view_mode;
+	int view_hantei;
+	int view_idou;
+	int depth_hantei;
+	double depth_idou;
 	
 };
 

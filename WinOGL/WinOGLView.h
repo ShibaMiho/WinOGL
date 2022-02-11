@@ -71,6 +71,23 @@ public:
 	afx_msg void OnUpdateSurfaceMode(CCmdUI* pCmdUI);
 	afx_msg void OnDeleteMode();
 	afx_msg void OnUpdateDeleteMode(CCmdUI* pCmdUI);
+	afx_msg void OnViewMode();
+	afx_msg void OnUpdateViewMode(CCmdUI* pCmdUI);
+//	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+//	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnViewModeIdou();
+	afx_msg void OnViewModeKaiten();
+	afx_msg void OnViewModeKakudai();
+	afx_msg void OnViewModeSyukusyou();
+	afx_msg void OnUpdateViewModeIdou(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateViewModeKaiten(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateViewModeKakudai(CCmdUI* pCmdUI);
+	afx_msg void OnUpdateViewModeSyukusyou(CCmdUI* pCmdUI);
+	afx_msg void On3viewMode();
+	afx_msg void OnUpdate3viewMode(CCmdUI* pCmdUI);
+	afx_msg void OnViewLight();
+	afx_msg void OnUpdateViewLight(CCmdUI* pCmdUI);
 };
 
 #ifndef _DEBUG  // WinOGLView.cpp のデバッグ バージョン
